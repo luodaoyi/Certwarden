@@ -1,0 +1,35 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      APP_ENV: ${APP_ENV:-production}
+      APP_ADDR: ${APP_ADDR:-:8080}
+      APP_BASE_URL: ${APP_BASE_URL:-http://localhost:8080}
+      WEB_DIST_DIR: /app/web
+      DB_DRIVER: ${DB_DRIVER:-sqlite}
+      DATABASE_URL: ${DATABASE_URL:-/data/go-check-ssl.db}
+      ALLOW_REGISTRATION: ${ALLOW_REGISTRATION:-true}
+      BOOTSTRAP_ADMIN_EMAIL: ${BOOTSTRAP_ADMIN_EMAIL:-admin@example.com}
+      BOOTSTRAP_ADMIN_PASSWORD: ${BOOTSTRAP_ADMIN_PASSWORD:-ChangeMe123!}
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
+      ACCESS_TOKEN_TTL: ${ACCESS_TOKEN_TTL:-15m}
+      REFRESH_TOKEN_TTL: ${REFRESH_TOKEN_TTL:-720h}
+      SCAN_CONCURRENCY: ${SCAN_CONCURRENCY:-5}
+      SCAN_INTERVAL: ${SCAN_INTERVAL:-1h}
+      SCAN_TIMEOUT: ${SCAN_TIMEOUT:-10s}
+      WEBHOOK_TIMEOUT: ${WEBHOOK_TIMEOUT:-5s}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USERNAME: ${SMTP_USERNAME:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM: ${SMTP_FROM:-no-reply@example.com}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+    ports:
+      - "8080:8080"
+    volumes:
+      - ssl-data:/data
+
+volumes:
+  ssl-data:

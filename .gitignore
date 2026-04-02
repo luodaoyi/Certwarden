@@ -1,0 +1,16 @@
+.omx/
+.serena/
+.DS_Store
+Thumbs.db
+.env
+.env.local
+coverage.out
+dist/
+node_modules/
+tmp/
+data/
+apps/api/bin/
+apps/api/coverage.out
+apps/web/coverage/
+apps/web/dist/
+apps/web/node_modules/
