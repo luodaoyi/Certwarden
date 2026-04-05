@@ -1,5 +1,8 @@
 name: CI
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 on:
   push:
     branches: [main]
@@ -45,6 +48,7 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version-file: apps/api/go.mod
+          cache-dependency-path: apps/api/go.sum
       - run: go mod tidy
       - run: go vet ./...
       - run: go test ./...

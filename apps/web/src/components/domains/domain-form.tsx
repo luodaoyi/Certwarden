@@ -14,14 +14,8 @@ const schema = z.object({
   check_interval_seconds: z.coerce.number().int().min(60, "Minimum interval is 60 seconds"),
 });
 
-type FormValues = z.infer<typeof schema>;
-
-export interface DomainPayload {
-  hostname: string;
-  port: number;
-  enabled: boolean;
-  check_interval_seconds: number;
-}
+type DomainFormInput = z.input<typeof schema>;
+export type DomainPayload = z.output<typeof schema>;
 
 export function DomainForm({
   domain,
@@ -34,7 +28,7 @@ export function DomainForm({
   onSubmit: (payload: DomainPayload) => Promise<void>;
   onCancel?: () => void;
 }) {
-  const form = useForm<FormValues>({
+  const form = useForm<DomainFormInput, undefined, DomainPayload>({
     resolver: zodResolver(schema),
     defaultValues: {
       hostname: domain?.hostname ?? "",

@@ -24,6 +24,6 @@ describe("AppShell", () => {
       </MemoryRouter>
     );
 
-    expect(screen.getByText(/admin/i)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /admin/i })).toBeInTheDocument();
   });
 });
