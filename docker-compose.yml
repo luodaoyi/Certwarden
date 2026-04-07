@@ -1,5 +1,8 @@
+name: certwarden
+
 services:
   app:
+    image: certwarden:latest
     build:
       context: .
       dockerfile: Dockerfile
@@ -9,11 +12,11 @@ services:
       APP_BASE_URL: ${APP_BASE_URL:-http://localhost:8080}
       WEB_DIST_DIR: /app/web
       DB_DRIVER: ${DB_DRIVER:-sqlite}
-      DATABASE_URL: ${DATABASE_URL:-/data/go-check-ssl.db}
+      DATABASE_URL: ${DATABASE_URL:-/data/certwarden.db}
       ALLOW_REGISTRATION: ${ALLOW_REGISTRATION:-true}
       BOOTSTRAP_ADMIN_USERNAME: ${BOOTSTRAP_ADMIN_USERNAME:-admin}
       BOOTSTRAP_ADMIN_EMAIL: ${BOOTSTRAP_ADMIN_EMAIL:-}
-      BOOTSTRAP_ADMIN_PASSWORD: ${BOOTSTRAP_ADMIN_PASSWORD:-ChangeMe123!}
+      BOOTSTRAP_ADMIN_PASSWORD: ${BOOTSTRAP_ADMIN_PASSWORD:-admin}
       JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
       ACCESS_TOKEN_TTL: ${ACCESS_TOKEN_TTL:-15m}
       REFRESH_TOKEN_TTL: ${REFRESH_TOKEN_TTL:-720h}
@@ -30,7 +33,7 @@ services:
     ports:
       - "8080:8080"
     volumes:
-      - ssl-data:/data
+      - certwarden-data:/data
 
 volumes:
-  ssl-data:
+  certwarden-data:

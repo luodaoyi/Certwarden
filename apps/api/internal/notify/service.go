@@ -12,9 +12,9 @@ import (
 	"strings"
 	"time"
 
-	"go-check-ssl/apps/api/internal/config"
-	"go-check-ssl/apps/api/internal/mailer"
-	"go-check-ssl/apps/api/internal/models"
+	"github.com/luodaoyi/Certwarden/apps/api/internal/config"
+	"github.com/luodaoyi/Certwarden/apps/api/internal/mailer"
+	"github.com/luodaoyi/Certwarden/apps/api/internal/models"
 
 	"gorm.io/gorm"
 )
@@ -31,8 +31,8 @@ type PolicyView struct {
 }
 
 type TenantPolicies struct {
-	Default   PolicyView            `json:"default"`
-	Overrides map[uint]PolicyView   `json:"overrides"`
+	Default   PolicyView          `json:"default"`
+	Overrides map[uint]PolicyView `json:"overrides"`
 }
 
 type Service struct {
@@ -83,7 +83,7 @@ func (s *Service) GetPolicies(ctx context.Context, tenantID uint) (*TenantPolici
 	}
 
 	response := &TenantPolicies{
-		Default: PolicyView{ThresholdDays: []int{30, 7, 1}, EndpointIDs: []uint{}},
+		Default:   PolicyView{ThresholdDays: []int{30, 7, 1}, EndpointIDs: []uint{}},
 		Overrides: map[uint]PolicyView{},
 	}
 

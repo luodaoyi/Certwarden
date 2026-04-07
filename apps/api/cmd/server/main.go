@@ -7,8 +7,8 @@ import (
 	"os/signal"
 	"syscall"
 
-	"go-check-ssl/apps/api/internal/app"
-	"go-check-ssl/apps/api/internal/config"
+	"github.com/luodaoyi/Certwarden/apps/api/internal/app"
+	"github.com/luodaoyi/Certwarden/apps/api/internal/config"
 )
 
 func main() {

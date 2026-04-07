@@ -9,9 +9,9 @@ import (
 	"testing"
 	"time"
 
-	"go-check-ssl/apps/api/internal/config"
-	"go-check-ssl/apps/api/internal/database"
-	"go-check-ssl/apps/api/internal/mailer"
+	"github.com/luodaoyi/Certwarden/apps/api/internal/config"
+	"github.com/luodaoyi/Certwarden/apps/api/internal/database"
+	"github.com/luodaoyi/Certwarden/apps/api/internal/mailer"
 )
 
 func newTestService(t *testing.T) (*Service, *mailer.MemorySender) {
@@ -26,7 +26,7 @@ func newTestService(t *testing.T) (*Service, *mailer.MemorySender) {
 		AllowRegistration:      true,
 		BootstrapAdminUsername: "admin",
 		BootstrapAdminEmail:    "admin@example.com",
-		BootstrapAdminPassword: "ChangeMe123!",
+		BootstrapAdminPassword: "admin",
 		JWTSecret:              "unit-test-secret",
 		AccessTokenTTL:         15 * time.Minute,
 		RefreshTokenTTL:        24 * time.Hour,

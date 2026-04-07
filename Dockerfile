@@ -12,7 +12,7 @@ COPY apps/api/go.mod apps/api/go.sum* ./
 RUN go mod download
 COPY apps/api ./
 ENV CGO_ENABLED=1
-RUN go build -o /out/go-check-ssl ./cmd/server
+RUN go build -o /out/certwarden ./cmd/server
 
 FROM alpine:3.21
 RUN adduser -D -u 10001 app && \
@@ -20,8 +20,8 @@ RUN adduser -D -u 10001 app && \
     mkdir -p /app /data && \
     chown -R app:app /app /data
 WORKDIR /app
-COPY --from=api-builder /out/go-check-ssl /app/go-check-ssl
+COPY --from=api-builder /out/certwarden /app/certwarden
 COPY --from=web-builder /src/apps/web/dist /app/web
 USER app
 EXPOSE 8080
-CMD ["/app/go-check-ssl"]
+CMD ["/app/certwarden"]

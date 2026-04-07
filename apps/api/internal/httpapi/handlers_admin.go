@@ -4,10 +4,10 @@ import (
 	"context"
 	"net/http"
 
-	"go-check-ssl/apps/api/internal/auth"
-	"go-check-ssl/apps/api/internal/database"
-	"go-check-ssl/apps/api/internal/models"
-	"go-check-ssl/apps/api/internal/notify"
+	"github.com/luodaoyi/Certwarden/apps/api/internal/auth"
+	"github.com/luodaoyi/Certwarden/apps/api/internal/database"
+	"github.com/luodaoyi/Certwarden/apps/api/internal/models"
+	"github.com/luodaoyi/Certwarden/apps/api/internal/notify"
 
 	"gorm.io/gorm"
 )

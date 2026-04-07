@@ -1,7 +1,7 @@
 package database
 
 import (
-	"go-check-ssl/apps/api/internal/models"
+	"github.com/luodaoyi/Certwarden/apps/api/internal/models"
 	"strconv"
 	"strings"
 

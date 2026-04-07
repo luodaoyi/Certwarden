@@ -6,7 +6,7 @@ import (
 	"log/slog"
 	"net/smtp"
 
-	"go-check-ssl/apps/api/internal/config"
+	"github.com/luodaoyi/Certwarden/apps/api/internal/config"
 )
 
 type Message struct {

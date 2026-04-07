@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"go-check-ssl/apps/api/internal/models"
+	"github.com/luodaoyi/Certwarden/apps/api/internal/models"
 )
 
 func TestResolveIntervalUsesDomainOverride(t *testing.T) {

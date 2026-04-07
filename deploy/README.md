@@ -12,7 +12,7 @@
 ## 默认部署模式
 
 - 默认数据库：SQLite
-- 数据文件位置：`/data/go-check-ssl.db`
+- 数据文件位置：`/data/certwarden.db`
 - HTTP 服务端口：`8080`
 
 如果你希望切换到 MySQL 或 PostgreSQL，只需将 `DB_DRIVER` 与 `DATABASE_URL` 调整为对应值，并确保目标数据库已可访问。

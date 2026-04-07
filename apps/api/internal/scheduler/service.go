@@ -7,10 +7,10 @@ import (
 	"sync"
 	"time"
 
-	"go-check-ssl/apps/api/internal/config"
-	"go-check-ssl/apps/api/internal/models"
-	"go-check-ssl/apps/api/internal/notify"
-	"go-check-ssl/apps/api/internal/sslcheck"
+	"github.com/luodaoyi/Certwarden/apps/api/internal/config"
+	"github.com/luodaoyi/Certwarden/apps/api/internal/models"
+	"github.com/luodaoyi/Certwarden/apps/api/internal/notify"
+	"github.com/luodaoyi/Certwarden/apps/api/internal/sslcheck"
 
 	"gorm.io/gorm"
 )
@@ -188,7 +188,7 @@ func (s *Service) processDomain(ctx context.Context, domainID uint) (*models.Dom
 		}
 
 		updates := map[string]any{
-			"status":         result.Status,
+			"status":          result.Status,
 			"last_checked_at": result.CheckedAt,
 			"next_check_at":   nextCheckAt,
 			"updated_at":      s.now(),

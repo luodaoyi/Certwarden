@@ -13,8 +13,8 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"go-check-ssl/apps/api/internal/config"
-	"go-check-ssl/apps/api/internal/models"
+	"github.com/luodaoyi/Certwarden/apps/api/internal/config"
+	"github.com/luodaoyi/Certwarden/apps/api/internal/models"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"

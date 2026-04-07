@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	"go-check-ssl/apps/api/internal/models"
-	"go-check-ssl/apps/api/internal/notify"
+	"github.com/luodaoyi/Certwarden/apps/api/internal/models"
+	"github.com/luodaoyi/Certwarden/apps/api/internal/notify"
 
 	"gorm.io/gorm"
 )
@@ -20,10 +20,10 @@ type domainRequest struct {
 }
 
 type endpointRequest struct {
-	Name    string                           `json:"name"`
-	Type    models.NotificationEndpointType  `json:"type"`
-	Enabled *bool                            `json:"enabled"`
-	Config  map[string]string                `json:"config"`
+	Name    string                          `json:"name"`
+	Type    models.NotificationEndpointType `json:"type"`
+	Enabled *bool                           `json:"enabled"`
+	Config  map[string]string               `json:"config"`
 }
 
 type policyRequest struct {

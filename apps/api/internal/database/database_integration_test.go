@@ -8,15 +8,15 @@ import (
 	"testing"
 	"time"
 
-	"go-check-ssl/apps/api/internal/config"
-	"go-check-ssl/apps/api/internal/models"
+	"github.com/luodaoyi/Certwarden/apps/api/internal/config"
+	"github.com/luodaoyi/Certwarden/apps/api/internal/models"
 )
 
 func TestOpenAndMigrateConfiguredDatabase(t *testing.T) {
 	driver := os.Getenv("TEST_DATABASE")
 	cfg := config.Config{
-		DBDriver:     "sqlite",
-		DatabaseURL:  filepath.Join(t.TempDir(), "integration.db"),
+		DBDriver:          "sqlite",
+		DatabaseURL:       filepath.Join(t.TempDir(), "integration.db"),
 		AllowRegistration: true,
 	}
 

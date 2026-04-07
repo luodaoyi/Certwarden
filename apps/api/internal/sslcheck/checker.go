@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"time"
 
-	"go-check-ssl/apps/api/internal/models"
+	"github.com/luodaoyi/Certwarden/apps/api/internal/models"
 )
 
 type Result struct {

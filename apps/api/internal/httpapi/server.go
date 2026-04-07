@@ -9,11 +9,11 @@ import (
 	"strings"
 	"time"
 
-	"go-check-ssl/apps/api/internal/auth"
-	"go-check-ssl/apps/api/internal/config"
-	"go-check-ssl/apps/api/internal/models"
-	"go-check-ssl/apps/api/internal/notify"
-	"go-check-ssl/apps/api/internal/scheduler"
+	"github.com/luodaoyi/Certwarden/apps/api/internal/auth"
+	"github.com/luodaoyi/Certwarden/apps/api/internal/config"
+	"github.com/luodaoyi/Certwarden/apps/api/internal/models"
+	"github.com/luodaoyi/Certwarden/apps/api/internal/notify"
+	"github.com/luodaoyi/Certwarden/apps/api/internal/scheduler"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -21,7 +21,7 @@ import (
 	"gorm.io/gorm"
 )
 
-const refreshCookieName = "go_check_ssl_refresh"
+const refreshCookieName = "certwarden_refresh"
 
 type Server struct {
 	cfg       config.Config

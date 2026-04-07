@@ -7,7 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"go-check-ssl/apps/api/internal/testutil"
+	"github.com/luodaoyi/Certwarden/apps/api/internal/testutil"
 )
 
 func TestRegisterLoginAndAdminList(t *testing.T) {

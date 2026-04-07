@@ -1,4 +1,4 @@
-module go-check-ssl/apps/api
+module github.com/luodaoyi/Certwarden/apps/api
 
 go 1.25.3
 

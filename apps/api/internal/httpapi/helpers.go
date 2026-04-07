@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"go-check-ssl/apps/api/internal/auth"
-	"go-check-ssl/apps/api/internal/models"
+	"github.com/luodaoyi/Certwarden/apps/api/internal/auth"
+	"github.com/luodaoyi/Certwarden/apps/api/internal/models"
 
 	"github.com/go-chi/chi/v5"
 	"gorm.io/gorm"

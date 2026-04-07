@@ -20,7 +20,7 @@ jobs:
         image: mysql:8.4
         env:
           MYSQL_ROOT_PASSWORD: root
-          MYSQL_DATABASE: go_check_ssl
+          MYSQL_DATABASE: certwarden
         ports:
           - 3306:3306
         options: >-
@@ -32,7 +32,7 @@ jobs:
         image: postgres:17
         env:
           POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: go_check_ssl
+          POSTGRES_DB: certwarden
         ports:
           - 5432:5432
         options: >-
@@ -54,8 +54,8 @@ jobs:
       - run: go test ./...
         env:
           TEST_DATABASE: ${{ matrix.database }}
-          TEST_MYSQL_DSN: root:root@tcp(127.0.0.1:3306)/go_check_ssl?charset=utf8mb4&parseTime=True&loc=UTC
-          TEST_POSTGRES_DSN: host=127.0.0.1 user=postgres password=postgres dbname=go_check_ssl sslmode=disable
+          TEST_MYSQL_DSN: root:root@tcp(127.0.0.1:3306)/certwarden?charset=utf8mb4&parseTime=True&loc=UTC
+          TEST_POSTGRES_DSN: host=127.0.0.1 user=postgres password=postgres dbname=certwarden sslmode=disable
 
   web:
     runs-on: ubuntu-latest

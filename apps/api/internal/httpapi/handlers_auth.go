@@ -3,7 +3,7 @@ package httpapi
 import (
 	"net/http"
 
-	"go-check-ssl/apps/api/internal/auth"
+	"github.com/luodaoyi/Certwarden/apps/api/internal/auth"
 )
 
 type registerRequest struct {

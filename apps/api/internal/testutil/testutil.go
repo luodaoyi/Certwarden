@@ -9,14 +9,14 @@ import (
 	"testing"
 	"time"
 
-	"go-check-ssl/apps/api/internal/auth"
-	"go-check-ssl/apps/api/internal/config"
-	"go-check-ssl/apps/api/internal/database"
-	"go-check-ssl/apps/api/internal/httpapi"
-	"go-check-ssl/apps/api/internal/mailer"
-	"go-check-ssl/apps/api/internal/notify"
-	"go-check-ssl/apps/api/internal/scheduler"
-	"go-check-ssl/apps/api/internal/sslcheck"
+	"github.com/luodaoyi/Certwarden/apps/api/internal/auth"
+	"github.com/luodaoyi/Certwarden/apps/api/internal/config"
+	"github.com/luodaoyi/Certwarden/apps/api/internal/database"
+	"github.com/luodaoyi/Certwarden/apps/api/internal/httpapi"
+	"github.com/luodaoyi/Certwarden/apps/api/internal/mailer"
+	"github.com/luodaoyi/Certwarden/apps/api/internal/notify"
+	"github.com/luodaoyi/Certwarden/apps/api/internal/scheduler"
+	"github.com/luodaoyi/Certwarden/apps/api/internal/sslcheck"
 
 	"gorm.io/gorm"
 )
@@ -44,7 +44,7 @@ func NewRuntime(t *testing.T) *TestRuntime {
 		AllowRegistration:      true,
 		BootstrapAdminUsername: "admin",
 		BootstrapAdminEmail:    "admin@example.com",
-		BootstrapAdminPassword: "ChangeMe123!",
+		BootstrapAdminPassword: "admin",
 		JWTSecret:              "unit-test-secret",
 		AccessTokenTTL:         15 * time.Minute,
 		RefreshTokenTTL:        24 * time.Hour,

@@ -9,7 +9,7 @@ import {
   type ReactNode,
 } from "react";
 
-const LOCALE_STORAGE_KEY = "go-check-ssl.locale";
+const LOCALE_STORAGE_KEY = "certwarden.locale";
 
 export const localeOptions = [
   { value: "zh-CN", label: "简体中文" },

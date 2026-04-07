@@ -14,7 +14,7 @@
 
 > 推荐的新 GitHub 仓库名：`certwarden`
 >
-> 这个名字比 `go-check-ssl` 更像正式产品：`Cert` 直接点明证书场景，`warden` 表达持续守护、预警和值守的产品定位。
+> 这个名字比“原来的工具化命名”更像正式产品：`Cert` 直接点明证书场景，`warden` 表达持续守护、预警和值守的产品定位。
 
 ## 为什么叫 Certwarden
 
@@ -174,11 +174,11 @@ docker compose up --build -d
 | `APP_ADDR` | HTTP 监听地址 | `:8080` |
 | `APP_BASE_URL` | 对外访问地址 | `http://localhost:8080` |
 | `DB_DRIVER` | 数据库驱动 | `sqlite` |
-| `DATABASE_URL` | 数据库连接串 / 文件路径 | `data/go-check-ssl.db` |
+| `DATABASE_URL` | 数据库连接串 / 文件路径 | `data/certwarden.db` |
 | `ALLOW_REGISTRATION` | 是否允许公开注册 | `true` |
 | `BOOTSTRAP_ADMIN_USERNAME` | 初始管理员用户名 | `admin` |
 | `BOOTSTRAP_ADMIN_EMAIL` | 初始管理员联系邮箱，可留空 | 空 |
-| `BOOTSTRAP_ADMIN_PASSWORD` | 初始管理员密码 | `ChangeMe123!` |
+| `BOOTSTRAP_ADMIN_PASSWORD` | 初始管理员密码 | `admin` |
 | `SCAN_CONCURRENCY` | 检测协程池大小 | `5` |
 | `SCAN_INTERVAL` | 默认检测周期 | `1h` |
 | `SMTP_*` | SMTP 配置 | 空 |

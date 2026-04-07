@@ -15,10 +15,10 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"go-check-ssl/apps/api/internal/config"
-	"go-check-ssl/apps/api/internal/database"
-	"go-check-ssl/apps/api/internal/mailer"
-	"go-check-ssl/apps/api/internal/models"
+	"github.com/luodaoyi/Certwarden/apps/api/internal/config"
+	"github.com/luodaoyi/Certwarden/apps/api/internal/database"
+	"github.com/luodaoyi/Certwarden/apps/api/internal/mailer"
+	"github.com/luodaoyi/Certwarden/apps/api/internal/models"
 
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
