@@ -338,7 +338,7 @@ func (s *Service) send(ctx context.Context, endpoint models.NotificationEndpoint
 		}
 		return s.mailer.Send(ctx, mailer.Message{
 			To:      recipient,
-			Subject: fmt.Sprintf("[go-check-ssl] %s %s", body.EventType, body.Hostname),
+			Subject: fmt.Sprintf("[Certwarden] %s %s", body.EventType, body.Hostname),
 			Body:    message,
 		})
 	case models.NotificationEndpointTelegram:

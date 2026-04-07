@@ -1,0 +1,52 @@
+<svg width="1280" height="640" viewBox="0 0 1280 640" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Certwarden banner</title>
+  <desc id="desc">Brand banner for Certwarden, a multi-tenant SSL certificate monitoring platform.</desc>
+  <defs>
+    <linearGradient id="bg" x1="84" y1="58" x2="1194" y2="590" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0B1F33"/>
+      <stop offset="0.55" stop-color="#133E63"/>
+      <stop offset="1" stop-color="#0F766E"/>
+    </linearGradient>
+    <linearGradient id="glow" x1="278" y1="148" x2="512" y2="378" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#22D3EE" stop-opacity="0.95"/>
+      <stop offset="1" stop-color="#7DD3FC" stop-opacity="0.15"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="365" y1="163" x2="427" y2="340" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F8FAFC"/>
+      <stop offset="1" stop-color="#D1FAE5"/>
+    </linearGradient>
+    <filter id="shadow" x="188" y="107" width="410" height="410" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+      <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+      <feOffset dy="16"/>
+      <feGaussianBlur stdDeviation="22"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0.0352941 0 0 0 0 0.121569 0 0 0 0 0.2 0 0 0 0.28 0"/>
+      <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_0_1"/>
+      <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_0_1" result="shape"/>
+    </filter>
+  </defs>
+  <rect width="1280" height="640" rx="40" fill="url(#bg)"/>
+  <circle cx="222" cy="122" r="114" fill="#67E8F9" fill-opacity="0.08"/>
+  <circle cx="1087" cy="542" r="158" fill="#2DD4BF" fill-opacity="0.08"/>
+  <circle cx="997" cy="118" r="64" fill="#F8FAFC" fill-opacity="0.05"/>
+  <path d="M951 142C1037.9 142 1108.5 212.6 1108.5 299.5C1108.5 386.4 1037.9 457 951 457C864.1 457 793.5 386.4 793.5 299.5C793.5 212.6 864.1 142 951 142Z" stroke="#F8FAFC" stroke-opacity="0.08"/>
+  <path d="M907 214H1098" stroke="#F8FAFC" stroke-opacity="0.18" stroke-width="2"/>
+  <path d="M907 260H1140" stroke="#F8FAFC" stroke-opacity="0.12" stroke-width="2"/>
+  <path d="M907 306H1120" stroke="#F8FAFC" stroke-opacity="0.1" stroke-width="2"/>
+  <path d="M907 352H1048" stroke="#F8FAFC" stroke-opacity="0.1" stroke-width="2"/>
+  <g filter="url(#shadow)">
+    <rect x="254" y="153" width="278" height="278" rx="44" fill="#081625"/>
+    <rect x="254" y="153" width="278" height="278" rx="44" stroke="#67E8F9" stroke-opacity="0.2"/>
+    <rect x="288" y="187" width="210" height="210" rx="34" fill="url(#glow)"/>
+    <path d="M393 211L453 235V288C453 341.147 427.896 386.387 393 414C358.104 386.387 333 341.147 333 288V235L393 211Z" fill="#0B1F33" stroke="url(#accent)" stroke-width="14"/>
+    <path d="M367 289L386 308L421 266" stroke="url(#accent)" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <text x="610" y="255" fill="#F8FAFC" font-size="86" font-family="Segoe UI, Arial, sans-serif" font-weight="700">Certwarden</text>
+  <text x="610" y="314" fill="#CFFAFE" font-size="30" font-family="Segoe UI, Arial, sans-serif" font-weight="500">Multi-tenant SSL certificate monitoring and alerting</text>
+  <text x="610" y="398" fill="#E2E8F0" font-size="28" font-family="Segoe UI, Arial, sans-serif">Username-first access · Optional email binding · Email / Telegram / Webhook</text>
+  <text x="610" y="450" fill="#E2E8F0" font-size="28" font-family="Segoe UI, Arial, sans-serif">Go scheduler + worker pool · React admin console · SQLite / MySQL / PostgreSQL</text>
+  <rect x="610" y="491" width="176" height="56" rx="28" fill="#ECFEFF"/>
+  <text x="645" y="528" fill="#0F766E" font-size="24" font-family="Segoe UI, Arial, sans-serif" font-weight="700">certwarden</text>
+  <rect x="808" y="491" width="192" height="56" rx="28" fill="#134E4A" fill-opacity="0.55" stroke="#99F6E4" stroke-opacity="0.2"/>
+  <text x="841" y="528" fill="#CCFBF1" font-size="24" font-family="Segoe UI, Arial, sans-serif" font-weight="600">Docker ready</text>
+</svg>

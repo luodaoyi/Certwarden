@@ -26,7 +26,7 @@ export function AppShell() {
       <header className="border-b border-border bg-card">
         <div className="page-shell flex items-center justify-between py-4">
           <div>
-            <p className="text-sm text-muted-foreground">go-check-ssl</p>
+            <p className="text-sm font-medium uppercase tracking-[0.24em] text-muted-foreground">Certwarden</p>
             <h1 className="text-xl font-semibold">{t("shell.title")}</h1>
           </div>
           <div className="flex items-center gap-3">
