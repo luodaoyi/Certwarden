@@ -177,7 +177,7 @@ export function NotificationsPage() {
         </CardContent>
       </Card>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,420px)_minmax(0,1fr)] xl:items-start">
+      <div className="grid gap-6 2xl:grid-cols-[minmax(0,380px)_minmax(0,1fr)] 2xl:items-start">
         <Card className="self-start">
           <CardHeader>
             <CardTitle>{editingEndpoint ? t("notifications.editEndpointTitle") : t("notifications.addEndpointTitle")}</CardTitle>
@@ -217,7 +217,7 @@ export function NotificationsPage() {
             ) : null}
             {endpoints.length > 0 ? (
               <div className="overflow-hidden rounded-[20px] border border-border">
-                <div className="hidden grid-cols-[minmax(0,1.3fr)_120px_minmax(0,1fr)_170px_auto] gap-3 border-b border-border bg-[#f7f4ea] px-4 py-3 text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground md:grid">
+                <div className="hidden grid-cols-[minmax(0,1.4fr)_120px_minmax(0,1fr)_180px_auto] gap-4 border-b border-border bg-[#f7f4ea] px-4 py-3 text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground xl:grid">
                   <div>{t("common.name")}</div>
                   <div>{t("common.type")}</div>
                   <div>{t("notifications.destinationLabel")}</div>
@@ -227,7 +227,7 @@ export function NotificationsPage() {
                 <div className="divide-y divide-border/80">
                   {endpoints.map((endpoint) => (
                     <div key={endpoint.id} className="px-4 py-4">
-                      <div className="grid gap-3 md:grid-cols-[minmax(0,1.3fr)_120px_minmax(0,1fr)_170px_auto] md:items-center">
+                      <div className="space-y-3 xl:grid xl:grid-cols-[minmax(0,1.4fr)_120px_minmax(0,1fr)_180px_auto] xl:items-center xl:gap-4 xl:space-y-0">
                         <div className="min-w-0 space-y-1">
                           <div className="flex flex-wrap items-center gap-2">
                             <p className="truncate text-sm font-semibold text-foreground">{endpoint.name}</p>
@@ -239,12 +239,35 @@ export function NotificationsPage() {
                             {endpointMeta(endpoint)}
                           </p>
                         </div>
-                        <div className="text-sm font-medium text-foreground">{endpointTypeLabel(endpoint)}</div>
-                        <div className="min-w-0 text-sm text-foreground" title={endpointPreview(endpoint)}>
-                          <span className="block truncate">{endpointPreview(endpoint)}</span>
+
+                        <div className="grid gap-3 sm:grid-cols-2 xl:contents">
+                          <div className="space-y-1">
+                            <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground xl:hidden">
+                              {t("common.type")}
+                            </p>
+                            <p className="text-sm font-medium text-foreground">{endpointTypeLabel(endpoint)}</p>
+                          </div>
+
+                          <div className="min-w-0 space-y-1 text-sm text-foreground">
+                            <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground xl:hidden">
+                              {t("notifications.destinationLabel")}
+                            </p>
+                            <span className="block truncate" title={endpointPreview(endpoint)}>
+                              {endpointPreview(endpoint)}
+                            </span>
+                          </div>
+
+                          <div className="space-y-1 text-sm text-muted-foreground">
+                            <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground xl:hidden">
+                              {t("common.lastChecked")}
+                            </p>
+                            <span className="block">
+                              {formatDateTime(endpoint.updated_at)}
+                            </span>
+                          </div>
                         </div>
-                        <div className="text-sm text-muted-foreground">{formatDateTime(endpoint.updated_at)}</div>
-                        <div className="flex flex-wrap items-center justify-start gap-2 md:justify-end">
+
+                        <div className="flex flex-wrap items-center justify-start gap-2 pt-1 xl:justify-end xl:pt-0">
                           <Button
                             variant="secondary"
                             size="sm"
