@@ -23,6 +23,8 @@ export function AppShell({ mode = "workspace" }: { mode?: "workspace" | "admin" 
       ];
 
   const shellTitle = mode === "admin" ? t("shell.adminTitle") : t("shell.title");
+  const roleLabel = user?.role ? t(user.role === "super_admin" ? "role.super_admin" : "role.tenant_owner") : "";
+  const secondaryIdentity = [roleLabel, user?.email || t("settings.noEmailBound")].filter(Boolean).join(" · ");
 
   return (
     <div className="min-h-screen bg-background">
@@ -32,22 +34,23 @@ export function AppShell({ mode = "workspace" }: { mode?: "workspace" | "admin" 
             <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-muted-foreground">Certwarden</p>
             <h1 className="text-xl font-semibold tracking-[0.01em]">{shellTitle}</h1>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center justify-end gap-3">
             <LanguageSwitcher />
             {mode === "workspace" && user?.role === "super_admin" ? (
               <NavLink
-                className="inline-flex h-11 items-center justify-center border border-border bg-background px-4 text-sm font-semibold tracking-[0.06em] text-foreground transition hover:bg-secondary"
+                className="inline-flex h-11 shrink-0 items-center justify-center border border-border bg-background px-4 text-sm font-semibold tracking-[0.06em] text-foreground transition hover:bg-secondary"
                 to="/admin"
               >
                 {t("nav.admin")}
               </NavLink>
             ) : null}
-            <div className="border border-border bg-background px-3 py-2 text-right text-sm">
-              <p className="font-medium tracking-[0.01em]">{user?.username}</p>
-              <p className="text-muted-foreground">{user?.email || t("settings.noEmailBound")}</p>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                {user?.role ? t(user.role === "super_admin" ? "role.super_admin" : "role.tenant_owner") : null}
-              </p>
+            <div className="flex h-11 min-w-[220px] max-w-[280px] items-center border border-border bg-background px-3 text-right">
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-semibold tracking-[0.01em] text-foreground">{user?.username}</p>
+                <p className="truncate text-[11px] text-muted-foreground" title={secondaryIdentity}>
+                  {secondaryIdentity}
+                </p>
+              </div>
             </div>
             <Button variant="outline" onClick={() => void logout()}>
               <LogOut className="mr-2 h-4 w-4" />

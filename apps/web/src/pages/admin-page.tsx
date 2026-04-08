@@ -108,7 +108,7 @@ export function AdminPage() {
   });
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[320px_minmax(0,1fr)]">
+    <div className="grid gap-6 xl:grid-cols-[360px_minmax(0,1fr)]">
       <Card>
         <CardHeader>
           <CardTitle>{t("admin.tenantsTitle")}</CardTitle>
@@ -119,7 +119,7 @@ export function AdminPage() {
             <button
               key={item.tenant.id}
               type="button"
-              className={`w-full border px-4 py-4 text-left transition ${selectedTenantId === item.tenant.id ? "border-primary bg-secondary text-foreground" : "border-border bg-background text-foreground hover:bg-secondary/70"}`}
+              className={`w-full border px-4 py-4 text-left transition ${selectedTenantId === item.tenant.id ? "border-primary bg-secondary text-foreground shadow-[inset_3px_0_0_0_var(--color-primary)]" : "border-border bg-background text-foreground hover:bg-secondary/70"}`}
               onClick={() => {
                 setSelectedTenantId(item.tenant.id);
                 setActionMessage(null);
@@ -127,18 +127,24 @@ export function AdminPage() {
               }}
             >
               <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="truncate font-semibold">{item.tenant.name}</p>
-                  <p className="truncate text-sm text-muted-foreground">{item.owner.username}</p>
+                <div className="min-w-0 flex-1 space-y-1">
+                  <p className="truncate text-sm font-semibold">{item.tenant.name}</p>
+                  <p className="truncate text-xs text-muted-foreground">{item.owner.username}</p>
                 </div>
-                <Badge variant={item.tenant.disabled ? "warning" : "success"}>
+                <Badge className="self-start" variant={item.tenant.disabled ? "warning" : "success"}>
                   {item.tenant.disabled ? t("admin.disabledBadge") : t("admin.activeBadge")}
                 </Badge>
               </div>
-              <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-muted-foreground">
-                <div>{t("admin.domainCountLabel")}: {item.stats.domain_count}</div>
-                <div>{t("admin.errorCountLabel")}: {item.stats.error_count}</div>
-              </div>
+              <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1 text-[11px]">
+                <div className="flex items-center justify-between gap-2">
+                  <dt className="text-muted-foreground">{t("admin.domainCountLabel")}</dt>
+                  <dd className="font-semibold text-foreground">{item.stats.domain_count}</dd>
+                </div>
+                <div className="flex items-center justify-between gap-2">
+                  <dt className="text-muted-foreground">{t("admin.errorCountLabel")}</dt>
+                  <dd className="font-semibold text-foreground">{item.stats.error_count}</dd>
+                </div>
+              </dl>
             </button>
           ))}
           {tenants.length === 0 ? <p className="text-sm text-muted-foreground">{t("admin.noTenants")}</p> : null}
@@ -154,12 +160,25 @@ export function AdminPage() {
                 <CardDescription>{t("admin.tenantDetailDescription", { tenantId: detail.tenant.id })}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-5">
-                <div className="flex flex-wrap gap-2">
-                  <Badge variant={detail.tenant.disabled ? "warning" : "success"}>
-                    {detail.tenant.disabled ? t("admin.disabledBadge") : t("admin.activeBadge")}
-                  </Badge>
-                  <Badge variant="muted">{detail.owner.username}</Badge>
-                  <Badge variant="muted">{detail.owner.email || t("settings.noEmailBound")}</Badge>
+                <div className="grid gap-3 lg:grid-cols-[160px_minmax(0,1fr)_minmax(0,1fr)]">
+                  <div className="border border-border bg-background px-4 py-3">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">{t("common.status")}</p>
+                    <div className="mt-2">
+                      <Badge variant={detail.tenant.disabled ? "warning" : "success"}>
+                        {detail.tenant.disabled ? t("admin.disabledBadge") : t("admin.activeBadge")}
+                      </Badge>
+                    </div>
+                  </div>
+                  <div className="border border-border bg-background px-4 py-3">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">{t("common.username")}</p>
+                    <p className="mt-2 truncate text-sm font-semibold text-foreground">{detail.owner.username}</p>
+                  </div>
+                  <div className="border border-border bg-background px-4 py-3">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">{t("common.email")}</p>
+                    <p className="mt-2 truncate text-sm text-foreground" title={detail.owner.email || t("settings.noEmailBound")}>
+                      {detail.owner.email || t("settings.noEmailBound")}
+                    </p>
+                  </div>
                 </div>
 
                 <div className="grid gap-3 md:grid-cols-4">

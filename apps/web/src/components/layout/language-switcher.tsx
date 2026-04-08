@@ -6,12 +6,12 @@ export function LanguageSwitcher() {
   const { locale, setLocale, t } = useI18n();
 
   return (
-    <label className="inline-flex items-center gap-2 border border-border bg-card px-3 py-2 text-sm text-muted-foreground">
+    <label className="inline-flex h-11 shrink-0 items-center gap-2 border border-border bg-card px-3 text-sm text-muted-foreground">
       <Languages className="h-4 w-4" />
       <span className="sr-only">{t("common.language")}</span>
       <select
         aria-label={t("common.language")}
-        className="bg-transparent text-foreground outline-none"
+        className="min-w-0 bg-transparent text-sm text-foreground outline-none"
         value={locale}
         onChange={(event) => setLocale(event.target.value as (typeof localeOptions)[number]["value"])}
       >
