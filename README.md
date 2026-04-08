@@ -4,6 +4,16 @@
   <a href="https://github.com/luodaoyi/Certwarden/releases/tag/v1.0.0">
     <img src="https://img.shields.io/badge/release-v1.0.0-1f6feb?style=flat-square" alt="Release v1.0.0" />
   </a>
+  <a href="https://github.com/luodaoyi/Certwarden/actions/workflows/ci.yml">
+    <img src="https://github.com/luodaoyi/Certwarden/actions/workflows/ci.yml/badge.svg" alt="CI" />
+  </a>
+  <a href="https://github.com/luodaoyi/Certwarden/actions/workflows/docker.yml">
+    <img src="https://github.com/luodaoyi/Certwarden/actions/workflows/docker.yml/badge.svg" alt="Docker" />
+  </a>
+  <img src="https://img.shields.io/badge/Go-1.25-00ADD8?style=flat-square&logo=go" alt="Go 1.25" />
+  <img src="https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react&logoColor=111827" alt="React 19" />
+  <img src="https://img.shields.io/badge/Tailwind-v4-38BDF8?style=flat-square&logo=tailwindcss&logoColor=0f172a" alt="Tailwind CSS v4" />
+  <img src="https://img.shields.io/badge/Database-SQLite%20%7C%20MySQL%20%7C%20PostgreSQL-8b5cf6?style=flat-square" alt="SQLite MySQL PostgreSQL" />
 </p>
 
 <p align="center">
