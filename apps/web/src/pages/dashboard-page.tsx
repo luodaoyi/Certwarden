@@ -12,6 +12,7 @@ import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
 import { resolvePublicStatusSubtitle, resolvePublicStatusTitle } from "@/lib/public-status";
 import type { ApiDomain, DomainStatus, PublicTenantStatus } from "@/lib/types";
+import { cn } from "@/lib/utils";
 
 function statusVariant(status: DomainStatus) {
   switch (status) {
@@ -29,16 +30,18 @@ function OverviewTile({
   value,
   className,
   valueClassName,
+  labelClassName,
 }: {
   label: string;
   value: ReactNode;
   className?: string;
   valueClassName?: string;
+  labelClassName?: string;
 }) {
   return (
     <div className={`metric-tile min-h-[96px] ${className ?? ""}`}>
-      <p className="section-heading">{label}</p>
-      <div className={`mt-3 text-lg font-semibold text-foreground ${valueClassName ?? ""}`}>{value}</div>
+      <p className={cn("section-heading", !labelClassName && "text-muted-foreground", labelClassName)}>{label}</p>
+      <div className={cn("mt-3 text-lg font-semibold", !valueClassName && "text-foreground", valueClassName)}>{value}</div>
     </div>
   );
 }
@@ -117,28 +120,57 @@ export function DashboardPage() {
   return (
     <div className="space-y-6">
       <div className="grid gap-6 2xl:grid-cols-[minmax(0,1.6fr)_360px]">
-        <Card>
+        <Card className="border-[#30302e] bg-[#141413] text-[#faf9f5] shadow-[0_0_0_1px_rgba(48,48,46,0.92),0_18px_48px_rgba(20,20,19,0.14)]">
           <CardHeader>
-            <CardTitle>{t("dashboard.overviewTitle")}</CardTitle>
-            <CardDescription>{t("dashboard.overviewDescription")}</CardDescription>
+            <p className="brand-kicker text-[#d97757]">{t("dashboard.overviewTitle")}</p>
+            <CardTitle className="text-[32px] text-[#faf9f5]">{t("dashboard.overviewTitle")}</CardTitle>
+            <CardDescription className="max-w-2xl text-[#b0aea5]">{t("dashboard.overviewDescription")}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-5">
-            {publicStatusQuery.isLoading ? <p className="text-sm text-muted-foreground">{t("dashboard.loadingOverview")}</p> : null}
+            {publicStatusQuery.isLoading ? <p className="text-sm text-[#b0aea5]">{t("dashboard.loadingOverview")}</p> : null}
             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
               <OverviewTile
                 label={t("dashboard.overallStatus")}
+                className="border-[#3b3b37] bg-[#1f1f1d] shadow-none"
+                labelClassName="text-[#b0aea5]"
+                valueClassName="text-[#faf9f5]"
                 value={<Badge variant={statusVariant(overallStatus)}>{overallStatusLabel}</Badge>}
               />
               <OverviewTile
                 label={t("statusPage.nextExpiry")}
-                className="xl:col-span-2"
-                valueClassName="text-sm xl:whitespace-nowrap xl:text-base"
+                className="border-[#3b3b37] bg-[#1f1f1d] shadow-none xl:col-span-2"
+                labelClassName="text-[#b0aea5]"
+                valueClassName="text-sm text-[#faf9f5] xl:whitespace-nowrap xl:text-base"
                 value={formatDateTime(publicStatus?.summary.next_expiry_at)}
               />
-              <OverviewTile label={t("statusPage.totalMonitors")} value={publicStatus?.summary.domain_count ?? domains.length} />
-              <OverviewTile label={t("statusPage.healthyMonitors")} value={publicStatus?.summary.healthy_count ?? 0} />
-              <OverviewTile label={t("statusPage.pendingMonitors")} value={publicStatus?.summary.pending_count ?? 0} />
-              <OverviewTile label={t("admin.errorCountLabel")} value={publicStatus?.summary.error_count ?? 0} />
+              <OverviewTile
+                label={t("statusPage.totalMonitors")}
+                className="border-[#3b3b37] bg-[#1f1f1d] shadow-none"
+                labelClassName="text-[#b0aea5]"
+                valueClassName="text-[#faf9f5]"
+                value={publicStatus?.summary.domain_count ?? domains.length}
+              />
+              <OverviewTile
+                label={t("statusPage.healthyMonitors")}
+                className="border-[#3b3b37] bg-[#1f1f1d] shadow-none"
+                labelClassName="text-[#b0aea5]"
+                valueClassName="text-[#faf9f5]"
+                value={publicStatus?.summary.healthy_count ?? 0}
+              />
+              <OverviewTile
+                label={t("statusPage.pendingMonitors")}
+                className="border-[#3b3b37] bg-[#1f1f1d] shadow-none"
+                labelClassName="text-[#b0aea5]"
+                valueClassName="text-[#faf9f5]"
+                value={publicStatus?.summary.pending_count ?? 0}
+              />
+              <OverviewTile
+                label={t("admin.errorCountLabel")}
+                className="border-[#3b3b37] bg-[#1f1f1d] shadow-none"
+                labelClassName="text-[#b0aea5]"
+                valueClassName="text-[#faf9f5]"
+                value={publicStatus?.summary.error_count ?? 0}
+              />
             </div>
           </CardContent>
         </Card>
@@ -149,14 +181,14 @@ export function DashboardPage() {
             <CardDescription>{t("dashboard.publicPageDescription")}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="border border-border bg-background px-4 py-4">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">{t("dashboard.currentHeadline")}</p>
+            <div className="info-panel">
+              <p className="section-heading">{t("dashboard.currentHeadline")}</p>
               <p className="mt-2 text-base font-semibold text-foreground">{effectivePublicTitle}</p>
               <p className="mt-2 text-sm leading-6 text-muted-foreground">{effectivePublicSubtitle}</p>
             </div>
 
-            <div className="border border-border bg-background px-4 py-4">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">{t("dashboard.publicUrl")}</p>
+            <div className="info-panel">
+              <p className="section-heading">{t("dashboard.publicUrl")}</p>
               <a className="mt-2 block truncate text-sm font-medium text-primary" href={publicStatus?.public_url ?? "#"} target="_blank" rel="noreferrer">
                 {publicStatus?.public_url ?? t("common.none")}
               </a>
@@ -164,14 +196,14 @@ export function DashboardPage() {
 
             <div className="action-row">
               <a
-                className="inline-flex h-11 items-center justify-center border border-border bg-background px-4 text-sm font-semibold tracking-[0.06em] text-foreground transition hover:bg-secondary"
+                className="inline-flex h-10 items-center justify-center rounded-[12px] border border-border bg-[#fffdf8] px-4 text-[14px] font-medium text-foreground shadow-[0_0_0_1px_rgba(240,238,230,0.8)] transition hover:bg-[#f3f0e6]"
                 href={publicStatus?.public_url ?? "#"}
                 target="_blank"
                 rel="noreferrer"
               >
                 {t("dashboard.openPublicPage")}
               </a>
-              <Link className="inline-flex h-11 items-center justify-center border border-border bg-background px-4 text-sm font-semibold tracking-[0.06em] text-foreground transition hover:bg-secondary" to="/app/settings">
+              <Link className="inline-flex h-10 items-center justify-center rounded-[12px] border border-border bg-secondary px-4 text-[14px] font-medium text-secondary-foreground shadow-[0_0_0_1px_rgba(209,207,197,0.8)] transition hover:bg-[#e1dfd3]" to="/app/settings">
                 {t("dashboard.customizePublicPage")}
               </Link>
             </div>

@@ -120,22 +120,22 @@ export function SettingsPage() {
                 <p className="field-note">{t("settings.publicPageSubtitleHint")}</p>
               </div>
 
-              <div className="border border-border bg-background px-4 py-4">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">{t("settings.publicPageUrlLabel")}</p>
+              <div className="info-panel">
+                <p className="section-heading">{t("settings.publicPageUrlLabel")}</p>
                 <a className="mt-2 block truncate text-sm font-medium text-primary" href={publicStatusQuery.data?.public_url ?? "#"} target="_blank" rel="noreferrer">
                   {publicStatusQuery.data?.public_url ?? t("common.none")}
                 </a>
               </div>
             </div>
 
-            <div className="border border-border bg-background px-4 py-4">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">{t("settings.publicPagePreview")}</p>
+            <div className="info-panel">
+              <p className="section-heading">{t("settings.publicPagePreview")}</p>
               <div className="mt-4 space-y-3">
-                <p className="text-lg font-semibold tracking-[0.01em] text-foreground">{effectiveTitle}</p>
+                <p className="font-[Georgia,'Times_New_Roman',serif] text-[24px] font-medium leading-[1.2] text-foreground">{effectiveTitle}</p>
                 <p className="text-sm leading-6 text-muted-foreground">{effectiveSubtitle}</p>
                 <div className="action-row">
                   <a
-                    className="inline-flex h-11 items-center justify-center border border-border bg-background px-4 text-sm font-semibold tracking-[0.06em] text-foreground transition hover:bg-secondary"
+                    className="inline-flex h-10 items-center justify-center rounded-[12px] border border-border bg-[#fffdf8] px-4 text-[14px] font-medium text-foreground shadow-[0_0_0_1px_rgba(240,238,230,0.8)] transition hover:bg-[#f3f0e6]"
                     href={publicStatusQuery.data?.public_url ?? "#"}
                     target="_blank"
                     rel="noreferrer"

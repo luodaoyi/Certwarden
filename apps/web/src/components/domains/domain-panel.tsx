@@ -84,7 +84,12 @@ function DetailTile({
   wide?: boolean;
 }) {
   return (
-    <div className={cn("border border-border bg-background px-3 py-3 min-h-[92px]", wide && "md:col-span-2 xl:col-span-3")}>
+    <div
+      className={cn(
+        "min-h-[92px] rounded-[18px] border border-border bg-[#fffdf8] px-4 py-4 shadow-[0_0_0_1px_rgba(240,238,230,0.75),0_6px_20px_rgba(20,20,19,0.04)]",
+        wide && "md:col-span-2 xl:col-span-3"
+      )}
+    >
       <p className="section-heading">{label}</p>
       <p className={cn("mt-2 break-words text-sm text-foreground", mono && "font-mono text-[12px]")}>{value}</p>
     </div>
@@ -121,51 +126,72 @@ export function DomainPanel({
     : `${domain.check_interval_seconds}s`;
 
   return (
-    <article className={cn("overflow-hidden border border-border bg-card", className)}>
-      <div className="grid gap-4 px-4 py-3 xl:grid-cols-[minmax(260px,2.15fr)_96px_156px_156px_minmax(232px,auto)] xl:items-start">
-        <div className="min-w-0">
-          <button
-            type="button"
-            aria-expanded={expanded}
-            className="flex w-full min-w-0 items-start gap-3 text-left"
-            onClick={onToggle}
-          >
-            <span className="mt-0.5 text-muted-foreground">{expanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}</span>
-            <div className="min-w-0 flex-1">
-              <div className="flex flex-wrap items-center gap-3">
-                <h3 className="truncate text-base font-semibold tracking-tight text-foreground">{domain.hostname}:{domain.port}</h3>
-                <Badge variant={statusVariant(domain.status)}>{statusLabel}</Badge>
+    <article
+      className={cn(
+        "overflow-hidden rounded-[28px] border border-border bg-card shadow-[0_0_0_1px_rgba(240,238,230,0.85),0_8px_30px_rgba(20,20,19,0.05)]",
+        className
+      )}
+    >
+      <div className="px-4 py-4 sm:px-5">
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+          <div className="min-w-0 flex-1">
+            <button
+              type="button"
+              aria-expanded={expanded}
+              className="flex w-full min-w-0 items-start gap-3 text-left"
+              onClick={onToggle}
+            >
+              <span className="mt-0.5 rounded-full bg-[#efece2] p-1 text-muted-foreground">
+                {expanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+              </span>
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-3">
+                  <h3 className="truncate font-[Georgia,'Times_New_Roman',serif] text-[24px] font-medium leading-[1.15] text-foreground">
+                    {domain.hostname}:{domain.port}
+                  </h3>
+                  <Badge variant={statusVariant(domain.status)}>{statusLabel}</Badge>
+                </div>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                  {t("common.targetIp")}: {targetIP} · {t("common.resolvedIp")}: {resolvedIP}
+                </p>
               </div>
-              <p className="mt-1 truncate text-xs text-muted-foreground">
-                {t("common.targetIp")}: {targetIP} · {t("common.resolvedIp")}: {resolvedIP}
-              </p>
+            </button>
+          </div>
+
+          {actions ? (
+            <div className="flex flex-wrap items-center gap-2 xl:max-w-[340px] xl:justify-end">
+              {actions}
             </div>
-          </button>
+          ) : null}
         </div>
 
-        <SummaryCell
-          label={t("common.daysLeft")}
-          value={domain.days_remaining ?? t("common.none")}
-          className="xl:border-l xl:border-border/70 xl:pl-4"
-          valueClassName="whitespace-nowrap text-base font-semibold"
-        />
-        <SummaryCell
-          label={t("common.validTo")}
-          className="xl:border-l xl:border-border/70 xl:pl-4"
-          value={<SummaryDateValue locale={locale} value={domain.cert_expires_at} fallback={t("common.none")} />}
-        />
-        <SummaryCell
-          label={t("common.lastChecked")}
-          className="xl:border-l xl:border-border/70 xl:pl-4"
-          value={<SummaryDateValue locale={locale} value={domain.last_checked_at} fallback={t("common.none")} />}
-        />
-
-        <div className="flex flex-wrap items-center justify-start gap-2 xl:justify-self-end xl:justify-end xl:border-l xl:border-border/70 xl:pl-4 [&>*]:shrink-0">
-          {actions}
+        <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <SummaryCell
+            label={t("common.daysLeft")}
+            value={domain.days_remaining ?? t("common.none")}
+            className="metric-tile min-h-[84px]"
+            valueClassName="whitespace-nowrap text-base font-semibold"
+          />
+          <SummaryCell
+            label={t("common.validTo")}
+            className="metric-tile min-h-[84px]"
+            value={<SummaryDateValue locale={locale} value={domain.cert_expires_at} fallback={t("common.none")} />}
+          />
+          <SummaryCell
+            label={t("common.lastChecked")}
+            className="metric-tile min-h-[84px]"
+            value={<SummaryDateValue locale={locale} value={domain.last_checked_at} fallback={t("common.none")} />}
+          />
+          <SummaryCell
+            label={t("domains.checkIntervalCompact")}
+            className="metric-tile min-h-[84px]"
+            value={intervalLabel}
+            valueClassName="whitespace-nowrap text-sm font-semibold"
+          />
         </div>
       </div>
 
-      <div className="border-t border-border/70 bg-background/70 px-4 py-2">
+      <div className="border-t border-border/70 bg-[#f2efe5] px-4 py-3 sm:px-5">
         <div className="grid gap-3 md:grid-cols-[minmax(240px,2.3fr)_150px_110px_minmax(140px,1fr)] xl:grid-cols-[minmax(260px,2.3fr)_150px_110px_150px]">
           <SummaryCell
             label={t("domains.detectionNotes")}
@@ -177,20 +203,19 @@ export function DomainPanel({
             value={<SummaryDateValue locale={locale} value={domain.last_successful_at} fallback={t("common.none")} />}
           />
           <SummaryCell
-            label={t("domains.checkIntervalCompact")}
-            value={intervalLabel}
-            valueClassName="whitespace-nowrap text-sm font-semibold"
-          />
-          <SummaryCell
             label={t("common.signatureAlgorithm")}
             value={domain.cert_signature_algorithm || t("common.none")}
             valueClassName="truncate text-[13px] font-semibold"
+          />
+          <SummaryCell
+            label={t("domains.nextCheck")}
+            value={<SummaryDateValue locale={locale} value={domain.next_check_at} fallback={t("common.none")} />}
           />
         </div>
       </div>
 
       {expanded ? (
-        <div className="border-t border-border bg-secondary/35 p-4">
+        <div className="border-t border-border/70 bg-[#ebe7dc] p-4 sm:p-5">
           <div className="grid gap-4 xl:grid-cols-[minmax(0,1.45fr)_340px]">
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
               <DetailTile label={t("common.validFrom")} value={formatDateTime(domain.cert_valid_from)} />
@@ -209,7 +234,7 @@ export function DomainPanel({
 
             <div className="space-y-3">
               {domain.last_error ? (
-                <div className="border border-destructive/40 bg-destructive/8 px-4 py-4">
+                <div className="rounded-[18px] border border-destructive/30 bg-[#faecec] px-4 py-4">
                   <p className="section-heading text-destructive">{t("status.error")}</p>
                   <p className="mt-2 text-sm text-destructive">{domain.last_error}</p>
                 </div>

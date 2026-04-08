@@ -1,9 +1,10 @@
 import { useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 
 import { DomainPanel } from "@/components/domains/domain-panel";
 import { LanguageSwitcher } from "@/components/layout/language-switcher";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { apiRequest } from "@/lib/api";
@@ -46,53 +47,60 @@ export function TenantStatusPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-card">
-        <div className="page-shell flex flex-col gap-5 py-5 lg:flex-row lg:items-center lg:justify-between">
-          <div className="space-y-3">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-muted-foreground">Certwarden</p>
-            <div className="flex flex-wrap items-center gap-3">
-              <h1 className="text-2xl font-semibold tracking-[0.01em]">{pageTitle}</h1>
-              {payload ? <Badge variant={statusVariant(payload.summary.overall_status)}>{overallStatusLabel}</Badge> : null}
-            </div>
-            <p className="max-w-3xl text-sm leading-6 text-muted-foreground">{pageSubtitle}</p>
+      <header className="warm-topbar sticky top-0 z-40">
+        <div className="page-shell flex items-center justify-between py-4">
+          <div className="space-y-1">
+            <p className="brand-kicker">Certwarden</p>
+            <p className="text-[14px] text-muted-foreground">{t("statusPage.titleFallback")}</p>
           </div>
           <div className="flex items-center gap-3">
             <LanguageSwitcher />
-            <Link className="inline-flex h-11 items-center justify-center border border-border bg-background px-4 text-sm font-semibold tracking-[0.06em] text-foreground transition hover:bg-secondary" to="/login">
+            <Button variant="command" onClick={() => { window.location.href = "/login"; }}>
               {t("statusPage.signIn")}
-            </Link>
+            </Button>
           </div>
         </div>
       </header>
 
-      <div className="page-shell space-y-6">
+      <div className="page-shell space-y-8 py-8 lg:py-10">
+        <section className="rounded-[36px] border border-[#30302e] bg-[#141413] px-7 py-10 text-[#faf9f5] shadow-[0_0_0_1px_rgba(48,48,46,0.92),0_20px_48px_rgba(20,20,19,0.16)] lg:px-10 lg:py-12">
+          <div className="max-w-4xl space-y-5">
+            <p className="brand-kicker text-[#d97757]">Certwarden</p>
+            <div className="flex flex-wrap items-center gap-3">
+              <h1 className="editorial-display text-[#faf9f5]">{pageTitle}</h1>
+              {payload ? <Badge variant={statusVariant(payload.summary.overall_status)}>{overallStatusLabel}</Badge> : null}
+            </div>
+            <p className="max-w-3xl text-[17px] leading-[1.6] text-[#b0aea5]">{pageSubtitle}</p>
+          </div>
+        </section>
+
         {statusQuery.isLoading ? <p>{t("common.loadingDomains")}</p> : null}
 
         {payload ? (
           <>
-            <div className="grid gap-4 md:grid-cols-4">
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
               <Card>
-                <CardContent className="space-y-2">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">{t("statusPage.totalMonitors")}</p>
-                  <p className="text-3xl font-semibold">{payload.summary.domain_count}</p>
+                <CardContent>
+                  <p className="section-heading">{t("statusPage.totalMonitors")}</p>
+                  <p className="mt-3 text-[32px] font-semibold leading-none tracking-[-0.4px]">{payload.summary.domain_count}</p>
                 </CardContent>
               </Card>
               <Card>
-                <CardContent className="space-y-2">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">{t("statusPage.healthyMonitors")}</p>
-                  <p className="text-3xl font-semibold">{payload.summary.healthy_count}</p>
+                <CardContent>
+                  <p className="section-heading">{t("statusPage.healthyMonitors")}</p>
+                  <p className="mt-3 text-[32px] font-semibold leading-none tracking-[-0.4px]">{payload.summary.healthy_count}</p>
                 </CardContent>
               </Card>
               <Card>
-                <CardContent className="space-y-2">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">{t("statusPage.pendingMonitors")}</p>
-                  <p className="text-3xl font-semibold">{payload.summary.pending_count + payload.summary.error_count}</p>
+                <CardContent>
+                  <p className="section-heading">{t("statusPage.pendingMonitors")}</p>
+                  <p className="mt-3 text-[32px] font-semibold leading-none tracking-[-0.4px]">{payload.summary.pending_count + payload.summary.error_count}</p>
                 </CardContent>
               </Card>
               <Card>
-                <CardContent className="space-y-2">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">{t("statusPage.nextExpiry")}</p>
-                  <p className="text-sm font-semibold">{formatDateTime(payload.summary.next_expiry_at)}</p>
+                <CardContent>
+                  <p className="section-heading">{t("statusPage.nextExpiry")}</p>
+                  <p className="mt-3 text-[15px] font-semibold">{formatDateTime(payload.summary.next_expiry_at)}</p>
                 </CardContent>
               </Card>
             </div>
