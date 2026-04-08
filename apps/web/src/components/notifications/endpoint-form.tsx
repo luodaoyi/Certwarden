@@ -122,7 +122,7 @@ export function EndpointForm({
   })();
 
   return (
-    <form className="grid gap-5 md:grid-cols-2" onSubmit={(event) => void handleSubmit(event)}>
+    <form className="grid gap-4 md:grid-cols-2" onSubmit={(event) => void handleSubmit(event)}>
       <div className="space-y-2">
         <Label htmlFor="endpoint-name">{t("common.name")}</Label>
         <Input id="endpoint-name" placeholder={t("notifications.addEndpointTitle")} {...form.register("name")} />
@@ -181,7 +181,7 @@ export function EndpointForm({
 
       {validationError ? <p className="text-sm text-destructive md:col-span-2">{validationError}</p> : null}
 
-      <div className="action-row md:col-span-2">
+      <div className="action-row md:col-span-2 md:justify-end">
         <Button type="submit" disabled={Boolean(validationError)}>{submitLabel}</Button>
         {onCancel ? (
           <Button type="button" variant="outline" onClick={onCancel}>

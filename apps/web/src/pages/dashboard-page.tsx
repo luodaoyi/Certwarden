@@ -119,7 +119,7 @@ export function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-6 2xl:grid-cols-[minmax(0,1.6fr)_360px]">
+      <div className="grid gap-6 2xl:grid-cols-[minmax(0,1.6fr)_360px] 2xl:items-start">
         <Card className="border-[#30302e] bg-[#141413] text-[#faf9f5] shadow-[0_0_0_1px_rgba(48,48,46,0.92),0_18px_48px_rgba(20,20,19,0.14)]">
           <CardHeader>
             <p className="brand-kicker text-[#d97757]">{t("dashboard.overviewTitle")}</p>
@@ -175,7 +175,7 @@ export function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="self-start">
           <CardHeader>
             <CardTitle>{t("dashboard.publicPageTitle")}</CardTitle>
             <CardDescription>{t("dashboard.publicPageDescription")}</CardDescription>

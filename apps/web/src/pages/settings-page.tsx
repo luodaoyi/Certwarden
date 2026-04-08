@@ -106,7 +106,7 @@ export function SettingsPage() {
           <CardDescription>{t("settings.publicPageDescription")}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-5">
-          <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
+          <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_320px] xl:items-start">
             <div className="grid gap-5">
               <div className="space-y-2">
                 <Label htmlFor="settings-public-title">{t("settings.publicPageTitleLabel")}</Label>
@@ -128,7 +128,7 @@ export function SettingsPage() {
               </div>
             </div>
 
-            <div className="info-panel">
+            <div className="info-panel self-start">
               <p className="section-heading">{t("settings.publicPagePreview")}</p>
               <div className="mt-4 space-y-3">
                 <p className="font-[Georgia,'Times_New_Roman',serif] text-[24px] font-medium leading-[1.2] text-foreground">{effectiveTitle}</p>

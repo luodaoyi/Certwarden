@@ -126,13 +126,13 @@ export function NotificationsPage() {
         </CardContent>
       </Card>
 
-      <div className="grid gap-6 2xl:grid-cols-[400px_minmax(0,1fr)]">
-        <Card>
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,420px)_minmax(0,1fr)] xl:items-start">
+        <Card className="self-start">
           <CardHeader>
             <CardTitle>{editingEndpoint ? t("notifications.editEndpointTitle") : t("notifications.addEndpointTitle")}</CardTitle>
             <CardDescription>{t("notifications.endpointDescription")}</CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
             <EndpointForm
               endpoint={editingEndpoint ?? undefined}
               submitLabel={editingEndpoint ? t("notifications.saveEndpoint") : t("notifications.addEndpoint")}
@@ -144,16 +144,20 @@ export function NotificationsPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="self-start">
           <CardHeader>
             <CardTitle>{t("notifications.endpointListTitle")}</CardTitle>
             <CardDescription>{t("notifications.endpointListDescription")}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            {endpoints.length === 0 ? <p className="text-sm text-muted-foreground">{t("notifications.noEndpoints")}</p> : null}
+            {endpoints.length === 0 ? (
+              <div className="info-panel">
+                <p className="text-sm text-muted-foreground">{t("notifications.noEndpoints")}</p>
+              </div>
+            ) : null}
             {endpoints.map((endpoint) => (
               <div key={endpoint.id} className="compact-list-row">
-                <div className="flex flex-wrap items-start justify-between gap-4">
+                <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-start">
                   <div className="min-w-0 flex-1 space-y-3">
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="truncate text-sm font-semibold text-foreground">{endpoint.name}</p>
@@ -163,25 +167,25 @@ export function NotificationsPage() {
                       <Badge variant="muted">{endpointTypeLabel(endpoint)}</Badge>
                     </div>
 
-                    <div className="grid gap-3 md:grid-cols-[minmax(0,1.6fr)_180px_180px]">
-                      <div className="min-w-0">
+                    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(0,1.5fr)_170px_170px]">
+                      <div className="min-w-0 info-panel">
                         <p className="section-heading">{t("common.name")}</p>
                         <p className="mt-2 truncate text-sm text-foreground" title={endpointPreview(endpoint)}>
                           {endpointPreview(endpoint)}
                         </p>
                       </div>
-                      <div className="min-w-0">
+                      <div className="min-w-0 info-panel">
                         <p className="section-heading">{t("common.type")}</p>
                         <p className="mt-2 text-sm font-medium text-foreground">{endpointTypeLabel(endpoint)}</p>
                       </div>
-                      <div className="min-w-0">
+                      <div className="min-w-0 info-panel md:col-span-2 xl:col-span-1">
                         <p className="section-heading">{t("common.lastChecked")}</p>
                         <p className="mt-2 text-sm text-foreground">{formatDateTime(endpoint.updated_at)}</p>
                       </div>
                     </div>
                   </div>
 
-                  <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2 xl:justify-end">
                     <Button variant="outline" size="sm" onClick={() => setEditingEndpoint(endpoint)}>{t("common.edit")}</Button>
                     <Button variant="destructive" size="sm" onClick={() => void deleteEndpointMutation.mutateAsync(endpoint.id)}>{t("common.delete")}</Button>
                   </div>
@@ -192,8 +196,8 @@ export function NotificationsPage() {
         </Card>
       </div>
 
-      <div className="grid gap-6 2xl:grid-cols-2">
-        <Card>
+      <div className="grid gap-6 xl:grid-cols-2 xl:items-start">
+        <Card className="self-start">
           <CardHeader>
             <CardTitle>{t("notifications.defaultPolicyTitle")}</CardTitle>
             <CardDescription>{t("notifications.defaultPolicyDescription")}</CardDescription>
@@ -221,13 +225,13 @@ export function NotificationsPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="self-start">
           <CardHeader>
             <CardTitle>{t("notifications.overridePolicyTitle")}</CardTitle>
             <CardDescription>{t("notifications.overridePolicyDescription")}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-5">
-            <div className="grid gap-3 lg:grid-cols-[minmax(0,1.2fr)_180px_180px]">
+            <div className="grid gap-3">
               <div className="space-y-2">
                 <p className="section-heading">{t("notifications.selectDomain")}</p>
                 <select
@@ -242,16 +246,18 @@ export function NotificationsPage() {
                 </select>
               </div>
 
-              <div className="info-panel">
-                <p className="section-heading">{t("notifications.thresholdsLabel")}</p>
-                <p className="mt-2 text-sm font-semibold text-foreground">{selectedDomain ? overrideThresholds : t("common.none")}</p>
-              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="info-panel">
+                  <p className="section-heading">{t("notifications.thresholdsLabel")}</p>
+                  <p className="mt-2 text-sm font-semibold text-foreground">{selectedDomain ? overrideThresholds : t("common.none")}</p>
+                </div>
 
-              <div className="info-panel">
-                <p className="section-heading">{t("notifications.channels")}</p>
-                <p className="mt-2 text-sm font-semibold text-foreground">
-                  {selectedDomain ? (overridePolicy?.endpoint_ids.length ?? 0) : t("common.none")}
-                </p>
+                <div className="info-panel">
+                  <p className="section-heading">{t("notifications.channels")}</p>
+                  <p className="mt-2 text-sm font-semibold text-foreground">
+                    {selectedDomain ? (overridePolicy?.endpoint_ids.length ?? 0) : t("common.none")}
+                  </p>
+                </div>
               </div>
             </div>
 

@@ -60,7 +60,7 @@ export function PolicyForm({
   const selectedEndpointIds = form.watch("endpoint_ids");
 
   return (
-    <form className="space-y-5" onSubmit={(event) => void handleSubmit(event)}>
+    <form className="space-y-4" onSubmit={(event) => void handleSubmit(event)}>
       <div className="space-y-2">
         <label className="text-sm font-medium">{t("notifications.thresholdsLabel")}</label>
         <Input placeholder={t("notifications.thresholdsPlaceholder")} {...form.register("thresholds")} />
@@ -69,7 +69,7 @@ export function PolicyForm({
 
       <div className="space-y-2">
         <p className="text-sm font-medium">{t("notifications.channels")}</p>
-        <div className="grid gap-2 sm:grid-cols-2">
+        <div className="grid gap-2 xl:grid-cols-2">
           {endpoints.map((endpoint) => (
             <label key={endpoint.id} className="compact-list-row flex min-h-14 items-center gap-3 py-2 text-sm">
               <input
@@ -102,7 +102,7 @@ export function PolicyForm({
         </div>
       </div>
 
-      <div className="action-row">
+      <div className="action-row justify-end">
         <Button type="submit">{submitLabel}</Button>
       </div>
     </form>
