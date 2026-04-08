@@ -41,13 +41,13 @@ export function LoginPage() {
 
   return (
     <PublicPageShell>
-      <Card className="w-full max-w-md">
+      <Card className="w-full">
         <CardHeader>
           <CardTitle>{t("auth.signInTitle")}</CardTitle>
           <CardDescription>{t("auth.signInDescription")}</CardDescription>
         </CardHeader>
         <CardContent>
-          <form className="space-y-4" onSubmit={(event) => void handleSubmit(event)}>
+          <form className="space-y-5" onSubmit={(event) => void handleSubmit(event)}>
             <div className="space-y-2">
               <Label htmlFor="username">{t("common.username")}</Label>
               <Input id="username" {...form.register("username", { required: true })} />
@@ -60,7 +60,7 @@ export function LoginPage() {
             <Button className="w-full" type="submit">{t("auth.signIn")}</Button>
           </form>
 
-          <div className="mt-4 flex justify-between text-sm text-muted-foreground">
+          <div className="flex justify-between border-t border-border pt-4 text-sm text-muted-foreground">
             <Link to="/register">{t("auth.createAccount")}</Link>
             <Link to="/forgot-password">{t("auth.forgotPasswordLink")}</Link>
           </div>

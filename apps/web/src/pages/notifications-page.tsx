@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { EndpointForm, type EndpointPayload } from "@/components/notifications/endpoint-form";
 import { PolicyForm, type PolicyPayload } from "@/components/notifications/policy-form";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { apiRequest } from "@/lib/api";
@@ -103,14 +104,19 @@ export function NotificationsPage() {
         <CardContent className="space-y-3">
           {endpoints.length === 0 ? <p className="text-sm text-muted-foreground">{t("notifications.noEndpoints")}</p> : null}
           {endpoints.map((endpoint) => (
-            <div key={endpoint.id} className="flex flex-wrap items-center justify-between gap-3 border border-border bg-background px-4 py-3">
-              <div>
-                <p className="font-medium">{endpoint.name}</p>
-                <p className="text-sm text-muted-foreground">
+            <div key={endpoint.id} className="compact-list-row flex flex-wrap items-center justify-between gap-3">
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="truncate font-medium">{endpoint.name}</p>
+                  <Badge variant={endpoint.enabled ? "success" : "warning"}>
+                    {endpoint.enabled ? t("common.enabled") : t("admin.disabledBadge")}
+                  </Badge>
+                </div>
+                <p className="mt-1 text-sm text-muted-foreground">
                   {t(endpoint.type === "email" ? "endpointType.email" : endpoint.type === "telegram" ? "endpointType.telegram" : "endpointType.webhook")}
                 </p>
               </div>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <Button variant="outline" size="sm" onClick={() => setEditingEndpoint(endpoint)}>{t("common.edit")}</Button>
                 <Button variant="destructive" size="sm" onClick={() => void deleteEndpointMutation.mutateAsync(endpoint.id)}>{t("common.delete")}</Button>
               </div>

@@ -37,13 +37,13 @@ export function ResetPasswordPage() {
 
   return (
     <PublicPageShell>
-      <Card className="w-full max-w-md">
+      <Card className="w-full">
         <CardHeader>
           <CardTitle>{t("auth.resetPasswordTitle")}</CardTitle>
           <CardDescription>{t("auth.resetPasswordDescription")}</CardDescription>
         </CardHeader>
         <CardContent>
-          <form className="space-y-4" onSubmit={(event) => void handleSubmit(event)}>
+          <form className="space-y-5" onSubmit={(event) => void handleSubmit(event)}>
             <div className="space-y-2">
               <Label htmlFor="reset-password">{t("common.newPassword")}</Label>
               <Input id="reset-password" type="password" {...form.register("password", { required: true })} />
@@ -52,7 +52,7 @@ export function ResetPasswordPage() {
             {error ? <p className="text-sm text-destructive">{error}</p> : null}
             <Button className="w-full" type="submit" disabled={!token}>{t("auth.resetPasswordButton")}</Button>
           </form>
-          <div className="mt-4 text-sm text-muted-foreground">
+          <div className="border-t border-border pt-4 text-sm text-muted-foreground">
             <Link to="/login">{t("auth.backToLogin")}</Link>
           </div>
         </CardContent>

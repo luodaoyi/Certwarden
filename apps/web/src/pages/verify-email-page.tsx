@@ -30,7 +30,7 @@ export function VerifyEmailPage() {
 
   return (
     <PublicPageShell>
-      <Card className="w-full max-w-lg">
+      <Card className="w-full">
         <CardHeader>
           <CardTitle>{t("auth.verifyEmailTitle")}</CardTitle>
           <CardDescription>{t("auth.verifyEmailDescription")}</CardDescription>
@@ -43,7 +43,7 @@ export function VerifyEmailPage() {
           <Button variant="outline" onClick={() => window.location.assign("/login")}>
             {t("auth.backToLogin")}
           </Button>
-          <p className="text-sm text-muted-foreground">
+          <p className="border-t border-border pt-4 text-sm text-muted-foreground">
             {t("auth.needNewAccount")} <Link to="/register">{t("auth.registerAgain")}</Link>
           </p>
         </CardContent>

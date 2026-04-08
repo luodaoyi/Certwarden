@@ -11,7 +11,7 @@ export function Input({ className, error, ...props }: InputProps) {
     <div className="space-y-1">
       <input
         className={cn(
-          "flex h-11 w-full border border-border bg-background px-3 py-2 text-sm text-foreground outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring",
+          "flex h-11 w-full border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground outline-none ring-0 transition focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring",
           error && "border-destructive focus-visible:ring-destructive",
           className
         )}

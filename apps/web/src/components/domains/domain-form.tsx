@@ -117,7 +117,7 @@ export function DomainForm({
   const selectedPreset = form.watch("interval_preset");
 
   return (
-    <form className="grid gap-4 md:grid-cols-2" onSubmit={(event) => void handleSubmit(event)}>
+    <form className="grid gap-5 md:grid-cols-2" onSubmit={(event) => void handleSubmit(event)}>
       <div className="space-y-2 md:col-span-2">
         <Label htmlFor="hostname">{t("common.hostname")}</Label>
         <Input
@@ -134,7 +134,7 @@ export function DomainForm({
       <div className="space-y-2">
         <Label htmlFor="target_ip">{t("common.targetIp")}</Label>
         <Input id="target_ip" placeholder={t("domains.targetIpPlaceholder")} {...form.register("target_ip")} />
-        <p className="text-xs text-muted-foreground">{t("domains.targetIpHint")}</p>
+        <p className="field-note">{t("domains.targetIpHint")}</p>
       </div>
       <div className="space-y-2">
         <Label htmlFor="interval_preset">{t("domains.intervalPresetLabel")}</Label>
@@ -150,7 +150,7 @@ export function DomainForm({
           ))}
           <option value="custom">{t("domains.intervalCustomOption")}</option>
         </select>
-        <p className="text-xs text-muted-foreground">{t("domains.intervalPresetHint")}</p>
+        <p className="field-note">{t("domains.intervalPresetHint")}</p>
       </div>
       <div className="space-y-2">
         <Label htmlFor="custom_interval_seconds">{t("domains.customIntervalLabel")}</Label>
@@ -167,13 +167,13 @@ export function DomainForm({
             },
           })}
         />
-        <p className="text-xs text-muted-foreground">{t("domains.customIntervalHint")}</p>
+        <p className="field-note">{t("domains.customIntervalHint")}</p>
       </div>
-      <label className="flex items-center gap-2 text-sm md:col-span-2">
+      <label className="checkbox-row md:col-span-2">
         <input type="checkbox" className="h-4 w-4 border border-border accent-primary" {...form.register("enabled")} />
         {t("common.enabled")}
       </label>
-      <div className="flex gap-3 md:col-span-2">
+      <div className="action-row md:col-span-2">
         <Button type="submit">{submitLabel}</Button>
         {onCancel ? (
           <Button type="button" variant="outline" onClick={onCancel}>

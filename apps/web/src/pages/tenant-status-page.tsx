@@ -70,28 +70,28 @@ export function TenantStatusPage() {
           <>
             <div className="grid gap-4 md:grid-cols-4">
               <Card>
-                <CardHeader>
-                  <CardTitle>{t("statusPage.totalMonitors")}</CardTitle>
-                </CardHeader>
-                <CardContent><p className="text-3xl font-semibold">{payload.summary.domain_count}</p></CardContent>
+                <CardContent className="space-y-2">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">{t("statusPage.totalMonitors")}</p>
+                  <p className="text-3xl font-semibold">{payload.summary.domain_count}</p>
+                </CardContent>
               </Card>
               <Card>
-                <CardHeader>
-                  <CardTitle>{t("statusPage.healthyMonitors")}</CardTitle>
-                </CardHeader>
-                <CardContent><p className="text-3xl font-semibold">{payload.summary.healthy_count}</p></CardContent>
+                <CardContent className="space-y-2">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">{t("statusPage.healthyMonitors")}</p>
+                  <p className="text-3xl font-semibold">{payload.summary.healthy_count}</p>
+                </CardContent>
               </Card>
               <Card>
-                <CardHeader>
-                  <CardTitle>{t("statusPage.pendingMonitors")}</CardTitle>
-                </CardHeader>
-                <CardContent><p className="text-3xl font-semibold">{payload.summary.pending_count}</p></CardContent>
+                <CardContent className="space-y-2">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">{t("statusPage.pendingMonitors")}</p>
+                  <p className="text-3xl font-semibold">{payload.summary.pending_count}</p>
+                </CardContent>
               </Card>
               <Card>
-                <CardHeader>
-                  <CardTitle>{t("statusPage.nextExpiry")}</CardTitle>
-                </CardHeader>
-                <CardContent><p className="text-sm font-semibold">{formatDateTime(payload.summary.next_expiry_at)}</p></CardContent>
+                <CardContent className="space-y-2">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">{t("statusPage.nextExpiry")}</p>
+                  <p className="text-sm font-semibold">{formatDateTime(payload.summary.next_expiry_at)}</p>
+                </CardContent>
               </Card>
             </div>
 

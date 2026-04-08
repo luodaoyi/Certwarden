@@ -46,13 +46,13 @@ export function SettingsPage() {
   });
 
   return (
-    <Card>
+    <Card className="max-w-3xl">
       <CardHeader>
         <CardTitle>{t("settings.title")}</CardTitle>
         <CardDescription>{t("settings.description")}</CardDescription>
       </CardHeader>
       <CardContent>
-        <form className="grid gap-4 md:max-w-xl" onSubmit={(event) => void handleSubmit(event)}>
+        <form className="grid gap-5 md:max-w-2xl md:grid-cols-2" onSubmit={(event) => void handleSubmit(event)}>
           <div className="space-y-2">
             <Label htmlFor="settings-username">{t("common.username")}</Label>
             <Input id="settings-username" {...form.register("username", { required: true })} />
@@ -60,11 +60,13 @@ export function SettingsPage() {
           <div className="space-y-2">
             <Label htmlFor="settings-email">{t("common.email")}</Label>
             <Input id="settings-email" type="email" placeholder={t("settings.optionalEmailPlaceholder")} {...form.register("email")} />
-            <p className="text-xs text-muted-foreground">{t("settings.emailHint")}</p>
+            <p className="field-note">{t("settings.emailHint")}</p>
           </div>
-          {message ? <p className="text-sm text-emerald-700">{message}</p> : null}
-          {error ? <p className="text-sm text-destructive">{error}</p> : null}
-          <Button className="w-fit" type="submit">{t("common.save")}</Button>
+          {message ? <p className="text-sm text-emerald-700 md:col-span-2">{message}</p> : null}
+          {error ? <p className="text-sm text-destructive md:col-span-2">{error}</p> : null}
+          <div className="action-row md:col-span-2">
+            <Button className="w-fit" type="submit">{t("common.save")}</Button>
+          </div>
         </form>
       </CardContent>
     </Card>

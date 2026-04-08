@@ -36,13 +36,13 @@ export function ForgotPasswordPage() {
 
   return (
     <PublicPageShell>
-      <Card className="w-full max-w-md">
+      <Card className="w-full">
         <CardHeader>
           <CardTitle>{t("auth.forgotPasswordTitle")}</CardTitle>
           <CardDescription>{t("auth.forgotPasswordDescription")}</CardDescription>
         </CardHeader>
         <CardContent>
-          <form className="space-y-4" onSubmit={(event) => void handleSubmit(event)}>
+          <form className="space-y-5" onSubmit={(event) => void handleSubmit(event)}>
             <div className="space-y-2">
               <Label htmlFor="forgot-account">{t("auth.usernameOrEmail")}</Label>
               <Input id="forgot-account" {...form.register("account", { required: true })} />
@@ -51,7 +51,7 @@ export function ForgotPasswordPage() {
             {error ? <p className="text-sm text-destructive">{error}</p> : null}
             <Button className="w-full" type="submit">{t("auth.sendResetLink")}</Button>
           </form>
-          <div className="mt-4 text-sm text-muted-foreground">
+          <div className="border-t border-border pt-4 text-sm text-muted-foreground">
             <Link to="/login">{t("auth.backToLogin")}</Link>
           </div>
         </CardContent>

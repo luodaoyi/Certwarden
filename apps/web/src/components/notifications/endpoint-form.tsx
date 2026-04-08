@@ -122,7 +122,7 @@ export function EndpointForm({
   })();
 
   return (
-    <form className="grid gap-4 md:grid-cols-2" onSubmit={(event) => void handleSubmit(event)}>
+    <form className="grid gap-5 md:grid-cols-2" onSubmit={(event) => void handleSubmit(event)}>
       <div className="space-y-2">
         <Label htmlFor="endpoint-name">{t("common.name")}</Label>
         <Input id="endpoint-name" placeholder={t("notifications.addEndpointTitle")} {...form.register("name")} />
@@ -174,14 +174,14 @@ export function EndpointForm({
         </>
       ) : null}
 
-      <label className="flex items-center gap-2 text-sm md:col-span-2">
+      <label className="checkbox-row md:col-span-2">
         <input type="checkbox" className="h-4 w-4 border border-border accent-primary" {...form.register("enabled")} />
         {t("common.enabled")}
       </label>
 
       {validationError ? <p className="text-sm text-destructive md:col-span-2">{validationError}</p> : null}
 
-      <div className="flex gap-3 md:col-span-2">
+      <div className="action-row md:col-span-2">
         <Button type="submit" disabled={Boolean(validationError)}>{submitLabel}</Button>
         {onCancel ? (
           <Button type="button" variant="outline" onClick={onCancel}>
