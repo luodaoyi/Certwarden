@@ -216,82 +216,73 @@ export function NotificationsPage() {
               </div>
             ) : null}
             {endpoints.length > 0 ? (
-              <div className="overflow-hidden rounded-[20px] border border-border">
-                <div className="hidden grid-cols-[minmax(0,1.4fr)_120px_minmax(0,1fr)_180px_auto] gap-4 border-b border-border bg-[#f7f4ea] px-4 py-3 text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground xl:grid">
-                  <div>{t("common.name")}</div>
-                  <div>{t("common.type")}</div>
-                  <div>{t("notifications.destinationLabel")}</div>
-                  <div>{t("common.lastChecked")}</div>
-                  <div className="text-right">{t("common.actions")}</div>
-                </div>
-                <div className="divide-y divide-border/80">
-                  {endpoints.map((endpoint) => (
-                    <div key={endpoint.id} className="px-4 py-4">
-                      <div className="space-y-3 xl:grid xl:grid-cols-[minmax(0,1.4fr)_120px_minmax(0,1fr)_180px_auto] xl:items-center xl:gap-4 xl:space-y-0">
-                        <div className="min-w-0 space-y-1">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <p className="truncate text-sm font-semibold text-foreground">{endpoint.name}</p>
-                            <Badge variant={endpoint.enabled ? "success" : "warning"}>
-                              {endpoint.enabled ? t("common.enabled") : t("admin.disabledBadge")}
-                            </Badge>
-                          </div>
-                          <p className="truncate text-xs text-muted-foreground" title={endpointMeta(endpoint)}>
-                            {endpointMeta(endpoint)}
-                          </p>
+              <div className="space-y-3">
+                {endpoints.map((endpoint) => (
+                  <div key={endpoint.id} className="rounded-[20px] border border-border bg-card px-4 py-4 shadow-sm">
+                    <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                      <div className="min-w-0 space-y-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="truncate text-sm font-semibold text-foreground">{endpoint.name}</p>
+                          <Badge variant={endpoint.enabled ? "success" : "warning"}>
+                            {endpoint.enabled ? t("common.enabled") : t("admin.disabledBadge")}
+                          </Badge>
                         </div>
+                        <p className="break-all text-xs text-muted-foreground" title={endpointMeta(endpoint)}>
+                          {endpointMeta(endpoint)}
+                        </p>
+                      </div>
 
-                        <div className="grid gap-3 sm:grid-cols-2 xl:contents">
-                          <div className="space-y-1">
-                            <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground xl:hidden">
-                              {t("common.type")}
-                            </p>
-                            <p className="text-sm font-medium text-foreground">{endpointTypeLabel(endpoint)}</p>
-                          </div>
-
-                          <div className="min-w-0 space-y-1 text-sm text-foreground">
-                            <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground xl:hidden">
-                              {t("notifications.destinationLabel")}
-                            </p>
-                            <span className="block truncate" title={endpointPreview(endpoint)}>
-                              {endpointPreview(endpoint)}
-                            </span>
-                          </div>
-
-                          <div className="space-y-1 text-sm text-muted-foreground">
-                            <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground xl:hidden">
-                              {t("common.lastChecked")}
-                            </p>
-                            <span className="block">
-                              {formatDateTime(endpoint.updated_at)}
-                            </span>
-                          </div>
-                        </div>
-
-                        <div className="flex flex-wrap items-center justify-start gap-2 pt-1 xl:justify-end xl:pt-0">
-                          <Button
-                            variant="secondary"
-                            size="sm"
-                            disabled={Boolean(testingEndpointId)}
-                            onClick={() => void runEndpointTest(endpoint)}
-                          >
-                            {testingEndpointId === endpoint.id ? t("notifications.testingAction") : t("notifications.testAction")}
-                          </Button>
-                          <Button variant="outline" size="sm" onClick={() => setEditingEndpoint(endpoint)}>{t("common.edit")}</Button>
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => void deleteEndpointMutation.mutateAsync(endpoint.id).catch((reason) => {
-                              setEndpointMessage(null);
-                              setEndpointError(getApiErrorMessage(reason, t("notifications.endpointDeleteError")));
-                            })}
-                          >
-                            {t("common.delete")}
-                          </Button>
-                        </div>
+                      <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          disabled={Boolean(testingEndpointId)}
+                          onClick={() => void runEndpointTest(endpoint)}
+                        >
+                          {testingEndpointId === endpoint.id ? t("notifications.testingAction") : t("notifications.testAction")}
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => setEditingEndpoint(endpoint)}>{t("common.edit")}</Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => void deleteEndpointMutation.mutateAsync(endpoint.id).catch((reason) => {
+                            setEndpointMessage(null);
+                            setEndpointError(getApiErrorMessage(reason, t("notifications.endpointDeleteError")));
+                          })}
+                        >
+                          {t("common.delete")}
+                        </Button>
                       </div>
                     </div>
-                  ))}
-                </div>
+
+                    <div className="mt-4 grid gap-3 md:grid-cols-3">
+                      <div className="rounded-[16px] border border-border/80 bg-[#f7f4ea] px-3 py-3">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                          {t("common.type")}
+                        </p>
+                        <p className="mt-2 text-sm font-medium text-foreground">{endpointTypeLabel(endpoint)}</p>
+                      </div>
+
+                      <div className="rounded-[16px] border border-border/80 bg-[#f7f4ea] px-3 py-3">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                          {t("notifications.destinationLabel")}
+                        </p>
+                        <p className="mt-2 break-all text-sm text-foreground" title={endpointPreview(endpoint)}>
+                          {endpointPreview(endpoint)}
+                        </p>
+                      </div>
+
+                      <div className="rounded-[16px] border border-border/80 bg-[#f7f4ea] px-3 py-3">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                          {t("common.lastChecked")}
+                        </p>
+                        <p className="mt-2 text-sm text-foreground">
+                          {formatDateTime(endpoint.updated_at)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             ) : null}
           </CardContent>
