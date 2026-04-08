@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -441,6 +442,88 @@ func TestTelegramEndpointRequiresBotTokenAndChatID(t *testing.T) {
 	}, loginPayload.Tokens.AccessToken)
 	if validResp.Code != http.StatusCreated {
 		t.Fatalf("expected telegram endpoint with bot token and chat id to succeed, got %d (%s)", validResp.Code, validResp.Body.String())
+	}
+}
+
+func TestEndpointListReturnsEditableConfigAndCanSendTest(t *testing.T) {
+	runtime := testutil.NewRuntime(t)
+	router := runtime.HTTPServer.Router()
+
+	registerResp := performJSONRequest(t, router, http.MethodPost, "/api/auth/register", map[string]any{
+		"username": "owner",
+		"password": "Password123!",
+	}, "")
+	if registerResp.Code != http.StatusCreated {
+		t.Fatalf("expected register 201, got %d (%s)", registerResp.Code, registerResp.Body.String())
+	}
+
+	loginResp := performJSONRequest(t, router, http.MethodPost, "/api/auth/login", map[string]string{
+		"username": "owner",
+		"password": "Password123!",
+	}, "")
+	if loginResp.Code != http.StatusOK {
+		t.Fatalf("expected login 200, got %d (%s)", loginResp.Code, loginResp.Body.String())
+	}
+	var loginPayload struct {
+		Tokens struct {
+			AccessToken string `json:"access_token"`
+		} `json:"tokens"`
+	}
+	if err := json.Unmarshal(loginResp.Body.Bytes(), &loginPayload); err != nil {
+		t.Fatalf("decode login payload: %v", err)
+	}
+
+	requestBodies := make([]string, 0, 1)
+	webhook := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, _ := io.ReadAll(r.Body)
+		requestBodies = append(requestBodies, string(body))
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`{"ok":true}`))
+	}))
+	defer webhook.Close()
+
+	createResp := performJSONRequest(t, router, http.MethodPost, "/api/notification-endpoints", map[string]any{
+		"name":    "Webhook Test",
+		"type":    "webhook",
+		"enabled": true,
+		"config": map[string]string{
+			"url": webhook.URL,
+		},
+	}, loginPayload.Tokens.AccessToken)
+	if createResp.Code != http.StatusCreated {
+		t.Fatalf("expected webhook endpoint create 201, got %d (%s)", createResp.Code, createResp.Body.String())
+	}
+	var createPayload struct {
+		Endpoint struct {
+			ID int `json:"id"`
+		} `json:"endpoint"`
+	}
+	if err := json.Unmarshal(createResp.Body.Bytes(), &createPayload); err != nil {
+		t.Fatalf("decode create payload: %v", err)
+	}
+
+	listResp := performJSONRequest(t, router, http.MethodGet, "/api/notification-endpoints", nil, loginPayload.Tokens.AccessToken)
+	if listResp.Code != http.StatusOK {
+		t.Fatalf("expected endpoint list 200, got %d (%s)", listResp.Code, listResp.Body.String())
+	}
+	var listPayload struct {
+		Endpoints []struct {
+			Config map[string]string `json:"config"`
+		} `json:"endpoints"`
+	}
+	if err := json.Unmarshal(listResp.Body.Bytes(), &listPayload); err != nil {
+		t.Fatalf("decode list payload: %v", err)
+	}
+	if len(listPayload.Endpoints) != 1 || listPayload.Endpoints[0].Config["url"] != webhook.URL {
+		t.Fatalf("expected editable config to include webhook url, got %+v", listPayload.Endpoints)
+	}
+
+	testResp := performJSONRequest(t, router, http.MethodPost, fmt.Sprintf("/api/notification-endpoints/%d/test", createPayload.Endpoint.ID), nil, loginPayload.Tokens.AccessToken)
+	if testResp.Code != http.StatusOK {
+		t.Fatalf("expected endpoint test 200, got %d (%s)", testResp.Code, testResp.Body.String())
+	}
+	if len(requestBodies) != 1 || !strings.Contains(requestBodies[0], `"event_type":"test"`) {
+		t.Fatalf("expected webhook test payload to be delivered, got %#v", requestBodies)
 	}
 }
 

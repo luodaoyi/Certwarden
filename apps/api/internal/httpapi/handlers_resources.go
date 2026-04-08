@@ -197,6 +197,35 @@ func (s *Server) handleDeleteEndpoint(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]string{"status": "deleted"})
 }
 
+func (s *Server) handleTestEndpoint(w http.ResponseWriter, r *http.Request) {
+	user, _ := currentUser(r.Context())
+	endpointID, err := parseUintParam(r, "endpointID")
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "invalid endpoint id")
+		return
+	}
+
+	endpoint, err := s.findEndpoint(r.Context(), user.TenantID, endpointID)
+	if err != nil {
+		if isNotFound(err) {
+			writeError(w, http.StatusNotFound, "endpoint not found")
+			return
+		}
+		writeError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	if err := s.notify.TestEndpoint(r.Context(), *endpoint); err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]any{
+		"status":   "sent",
+		"endpoint": s.toAPIEndpoint(*endpoint),
+	})
+}
+
 func (s *Server) handleGetPolicies(w http.ResponseWriter, r *http.Request) {
 	user, _ := currentUser(r.Context())
 	policies, err := s.notify.GetPolicies(r.Context(), user.TenantID)
@@ -465,6 +494,14 @@ func (s *Server) findDomain(ctx context.Context, tenantID, domainID uint) (*mode
 		return nil, err
 	}
 	return &domain, nil
+}
+
+func (s *Server) findEndpoint(ctx context.Context, tenantID, endpointID uint) (*models.NotificationEndpoint, error) {
+	var endpoint models.NotificationEndpoint
+	if err := s.db.WithContext(ctx).Where("id = ? AND tenant_id = ?", endpointID, tenantID).First(&endpoint).Error; err != nil {
+		return nil, err
+	}
+	return &endpoint, nil
 }
 
 func (s *Server) deleteDomain(ctx context.Context, tenantID, domainID uint) error {

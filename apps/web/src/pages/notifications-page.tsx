@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { apiRequest } from "@/lib/api";
+import { useApiErrorMessage } from "@/lib/api-error";
 import { useI18n } from "@/lib/i18n";
 import type { ApiDomain, ApiEndpoint, TenantPolicies } from "@/lib/types";
 
@@ -27,9 +28,12 @@ function OverviewTile({
 
 export function NotificationsPage() {
   const { t, formatDateTime } = useI18n();
+  const getApiErrorMessage = useApiErrorMessage();
   const queryClient = useQueryClient();
   const [editingEndpoint, setEditingEndpoint] = useState<ApiEndpoint | null>(null);
   const [selectedDomainId, setSelectedDomainId] = useState<number | null>(null);
+  const [endpointMessage, setEndpointMessage] = useState<string | null>(null);
+  const [endpointError, setEndpointError] = useState<string | null>(null);
 
   const endpointsQuery = useQuery({
     queryKey: ["notification-endpoints"],
@@ -58,6 +62,8 @@ export function NotificationsPage() {
       });
     },
     onSuccess: async () => {
+      setEndpointError(null);
+      setEndpointMessage(editingEndpoint ? t("notifications.endpointUpdatedSuccess") : t("notifications.endpointCreatedSuccess"));
       setEditingEndpoint(null);
       await queryClient.invalidateQueries({ queryKey: ["notification-endpoints"] });
     },
@@ -65,9 +71,24 @@ export function NotificationsPage() {
 
   const deleteEndpointMutation = useMutation({
     mutationFn: (id: number) => apiRequest(`/notification-endpoints/${id}`, { method: "DELETE" }),
-    onSuccess: async () => {
+    onSuccess: async (_, id) => {
+      setEndpointError(null);
+      setEndpointMessage(t("notifications.endpointDeletedSuccess"));
+      if (editingEndpoint?.id === id) {
+        setEditingEndpoint(null);
+      }
       await queryClient.invalidateQueries({ queryKey: ["notification-endpoints"] });
       await queryClient.invalidateQueries({ queryKey: ["notification-policies"] });
+    },
+  });
+
+  const testEndpointMutation = useMutation({
+    mutationFn: (id: number) => apiRequest<{ status: string; endpoint: ApiEndpoint }>(`/notification-endpoints/${id}/test`, {
+      method: "POST",
+    }),
+    onSuccess: (payload) => {
+      setEndpointError(null);
+      setEndpointMessage(t("notifications.testSuccess", { name: payload.endpoint.name }));
     },
   });
 
@@ -95,6 +116,7 @@ export function NotificationsPage() {
   const overrideCount = Object.keys(policies?.overrides ?? {}).length;
   const defaultThresholds = policies?.default.threshold_days.length ? policies.default.threshold_days.join(", ") : t("common.none");
   const overrideThresholds = overridePolicy?.threshold_days.length ? overridePolicy.threshold_days.join(", ") : t("common.none");
+  const testingEndpointId = testEndpointMutation.isPending ? testEndpointMutation.variables : null;
 
   const endpointTypeLabel = (endpoint: ApiEndpoint) => t(
     endpoint.type === "email"
@@ -106,10 +128,36 @@ export function NotificationsPage() {
 
   const endpointPreview = (endpoint: ApiEndpoint) => {
     if (endpoint.type === "telegram") {
-      return endpoint.config_masked.chat_id ?? t("common.none");
+      return endpoint.config.chat_id ?? t("common.none");
     }
-    const configValues = Object.values(endpoint.config_masked ?? {}).filter(Boolean);
-    return configValues[0] ?? t("common.none");
+    const configValues = endpoint.type === "email"
+      ? [endpoint.config.recipient_email]
+      : endpoint.type === "webhook"
+        ? [endpoint.config.url]
+        : Object.values(endpoint.config ?? {});
+    const values = configValues.filter(Boolean);
+    return values[0] ?? t("common.none");
+  };
+
+  const endpointMeta = (endpoint: ApiEndpoint) => {
+    if (endpoint.type === "telegram") {
+      return endpoint.config.bot_token ? t("notifications.telegramBotReady") : t("common.none");
+    }
+    if (endpoint.type === "webhook") {
+      return endpoint.config.auth_header_name ? endpoint.config.auth_header_name : t("common.none");
+    }
+    return t("notifications.emailDeliveryReady");
+  };
+
+  const runEndpointTest = async (endpoint: ApiEndpoint) => {
+    try {
+      setEndpointMessage(null);
+      setEndpointError(null);
+      await testEndpointMutation.mutateAsync(endpoint.id);
+    } catch (reason) {
+      setEndpointMessage(null);
+      setEndpointError(getApiErrorMessage(reason, t("notifications.testError")));
+    }
   };
 
   return (
@@ -140,9 +188,16 @@ export function NotificationsPage() {
               endpoint={editingEndpoint ?? undefined}
               submitLabel={editingEndpoint ? t("notifications.saveEndpoint") : t("notifications.addEndpoint")}
               onSubmit={async (values) => {
-                await saveEndpointMutation.mutateAsync({ id: editingEndpoint?.id, values });
+                try {
+                  setEndpointMessage(null);
+                  setEndpointError(null);
+                  await saveEndpointMutation.mutateAsync({ id: editingEndpoint?.id, values });
+                } catch (reason) {
+                  setEndpointMessage(null);
+                  setEndpointError(getApiErrorMessage(reason, t("notifications.endpointSaveError")));
+                }
               }}
-              onCancel={editingEndpoint ? () => setEditingEndpoint(null) : undefined}
+              onCancel={editingEndpoint ? () => { setEditingEndpoint(null); setEndpointMessage(null); setEndpointError(null); } : undefined}
             />
           </CardContent>
         </Card>
@@ -152,49 +207,70 @@ export function NotificationsPage() {
             <CardTitle>{t("notifications.endpointListTitle")}</CardTitle>
             <CardDescription>{t("notifications.endpointListDescription")}</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="space-y-4">
+            {endpointMessage ? <div className="rounded-[16px] border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{endpointMessage}</div> : null}
+            {endpointError ? <div className="rounded-[16px] border border-red-200 bg-red-50 px-4 py-3 text-sm text-destructive">{endpointError}</div> : null}
             {endpoints.length === 0 ? (
               <div className="info-panel">
                 <p className="text-sm text-muted-foreground">{t("notifications.noEndpoints")}</p>
               </div>
             ) : null}
-            {endpoints.map((endpoint) => (
-              <div key={endpoint.id} className="compact-list-row">
-                <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-start">
-                  <div className="min-w-0 flex-1 space-y-3">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <p className="truncate text-sm font-semibold text-foreground">{endpoint.name}</p>
-                      <Badge variant={endpoint.enabled ? "success" : "warning"}>
-                        {endpoint.enabled ? t("common.enabled") : t("admin.disabledBadge")}
-                      </Badge>
-                      <Badge variant="muted">{endpointTypeLabel(endpoint)}</Badge>
+            {endpoints.length > 0 ? (
+              <div className="overflow-hidden rounded-[20px] border border-border">
+                <div className="hidden grid-cols-[minmax(0,1.3fr)_120px_minmax(0,1fr)_170px_auto] gap-3 border-b border-border bg-[#f7f4ea] px-4 py-3 text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground md:grid">
+                  <div>{t("common.name")}</div>
+                  <div>{t("common.type")}</div>
+                  <div>{t("notifications.destinationLabel")}</div>
+                  <div>{t("common.lastChecked")}</div>
+                  <div className="text-right">{t("common.actions")}</div>
+                </div>
+                <div className="divide-y divide-border/80">
+                  {endpoints.map((endpoint) => (
+                    <div key={endpoint.id} className="px-4 py-4">
+                      <div className="grid gap-3 md:grid-cols-[minmax(0,1.3fr)_120px_minmax(0,1fr)_170px_auto] md:items-center">
+                        <div className="min-w-0 space-y-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <p className="truncate text-sm font-semibold text-foreground">{endpoint.name}</p>
+                            <Badge variant={endpoint.enabled ? "success" : "warning"}>
+                              {endpoint.enabled ? t("common.enabled") : t("admin.disabledBadge")}
+                            </Badge>
+                          </div>
+                          <p className="truncate text-xs text-muted-foreground" title={endpointMeta(endpoint)}>
+                            {endpointMeta(endpoint)}
+                          </p>
+                        </div>
+                        <div className="text-sm font-medium text-foreground">{endpointTypeLabel(endpoint)}</div>
+                        <div className="min-w-0 text-sm text-foreground" title={endpointPreview(endpoint)}>
+                          <span className="block truncate">{endpointPreview(endpoint)}</span>
+                        </div>
+                        <div className="text-sm text-muted-foreground">{formatDateTime(endpoint.updated_at)}</div>
+                        <div className="flex flex-wrap items-center justify-start gap-2 md:justify-end">
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            disabled={Boolean(testingEndpointId)}
+                            onClick={() => void runEndpointTest(endpoint)}
+                          >
+                            {testingEndpointId === endpoint.id ? t("notifications.testingAction") : t("notifications.testAction")}
+                          </Button>
+                          <Button variant="outline" size="sm" onClick={() => setEditingEndpoint(endpoint)}>{t("common.edit")}</Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => void deleteEndpointMutation.mutateAsync(endpoint.id).catch((reason) => {
+                              setEndpointMessage(null);
+                              setEndpointError(getApiErrorMessage(reason, t("notifications.endpointDeleteError")));
+                            })}
+                          >
+                            {t("common.delete")}
+                          </Button>
+                        </div>
+                      </div>
                     </div>
-
-                    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(0,1.5fr)_170px_170px]">
-                      <div className="min-w-0 info-panel">
-                        <p className="section-heading">{t("common.name")}</p>
-                        <p className="mt-2 truncate text-sm text-foreground" title={endpointPreview(endpoint)}>
-                          {endpointPreview(endpoint)}
-                        </p>
-                      </div>
-                      <div className="min-w-0 info-panel">
-                        <p className="section-heading">{t("common.type")}</p>
-                        <p className="mt-2 text-sm font-medium text-foreground">{endpointTypeLabel(endpoint)}</p>
-                      </div>
-                      <div className="min-w-0 info-panel md:col-span-2 xl:col-span-1">
-                        <p className="section-heading">{t("common.lastChecked")}</p>
-                        <p className="mt-2 text-sm text-foreground">{formatDateTime(endpoint.updated_at)}</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-wrap items-center gap-2 xl:justify-end">
-                    <Button variant="outline" size="sm" onClick={() => setEditingEndpoint(endpoint)}>{t("common.edit")}</Button>
-                    <Button variant="destructive" size="sm" onClick={() => void deleteEndpointMutation.mutateAsync(endpoint.id)}>{t("common.delete")}</Button>
-                  </div>
+                  ))}
                 </div>
               </div>
-            ))}
+            ) : null}
           </CardContent>
         </Card>
       </div>

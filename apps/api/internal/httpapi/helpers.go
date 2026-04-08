@@ -101,6 +101,7 @@ type APIEndpoint struct {
 	Name         string                          `json:"name"`
 	Type         models.NotificationEndpointType `json:"type"`
 	Enabled      bool                            `json:"enabled"`
+	Config       map[string]string               `json:"config"`
 	ConfigMasked map[string]string               `json:"config_masked"`
 	CreatedAt    time.Time                       `json:"created_at"`
 	UpdatedAt    time.Time                       `json:"updated_at"`
@@ -234,11 +235,13 @@ func toAPIDomainCheckResult(result models.DomainCheckResult) APIDomainCheckResul
 }
 
 func (s *Server) toAPIEndpoint(endpoint models.NotificationEndpoint) APIEndpoint {
+	config := models.MustEndpointConfig(endpoint.Config)
 	return APIEndpoint{
 		ID:           endpoint.ID,
 		Name:         endpoint.Name,
 		Type:         endpoint.Type,
 		Enabled:      endpoint.Enabled,
+		Config:       config,
 		ConfigMasked: s.notify.MaskConfig(endpoint),
 		CreatedAt:    endpoint.CreatedAt,
 		UpdatedAt:    endpoint.UpdatedAt,

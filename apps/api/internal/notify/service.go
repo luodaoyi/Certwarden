@@ -176,6 +176,61 @@ func (s *Service) MaybeNotify(ctx context.Context, domain models.Domain, previou
 	return nil
 }
 
+func (s *Service) TestEndpoint(ctx context.Context, endpoint models.NotificationEndpoint) error {
+	config := models.MustEndpointConfig(endpoint.Config)
+	timestamp := s.now().Format(time.RFC3339)
+	message := strings.Join([]string{
+		"Certwarden test notification",
+		fmt.Sprintf("Endpoint: %s", endpoint.Name),
+		fmt.Sprintf("Type: %s", endpoint.Type),
+		fmt.Sprintf("Time: %s", timestamp),
+	}, "\n")
+
+	switch endpoint.Type {
+	case models.NotificationEndpointEmail:
+		recipient := strings.TrimSpace(config["recipient_email"])
+		if recipient == "" {
+			return models.ErrInvalidEndpointConfig
+		}
+		return s.mailer.Send(ctx, mailer.Message{
+			To:      recipient,
+			Subject: "[Certwarden] Test notification",
+			Body:    message,
+		})
+	case models.NotificationEndpointTelegram:
+		botToken := strings.TrimSpace(config["bot_token"])
+		chatID := strings.TrimSpace(config["chat_id"])
+		if botToken == "" || chatID == "" {
+			return models.ErrInvalidEndpointConfig
+		}
+		return s.postJSON(ctx, fmt.Sprintf("https://api.telegram.org/bot%s/sendMessage", botToken), map[string]string{
+			"chat_id": chatID,
+			"text":    message,
+		}, nil)
+	case models.NotificationEndpointWebhook:
+		targetURL := strings.TrimSpace(config["url"])
+		if targetURL == "" {
+			return models.ErrInvalidEndpointConfig
+		}
+		headers := map[string]string{}
+		if headerName := strings.TrimSpace(config["auth_header_name"]); headerName != "" {
+			headers[headerName] = config["auth_header_value"]
+		}
+		return s.postJSON(ctx, targetURL, map[string]any{
+			"event_type": "test",
+			"timestamp":  timestamp,
+			"endpoint": map[string]any{
+				"id":   endpoint.ID,
+				"name": endpoint.Name,
+				"type": endpoint.Type,
+			},
+			"message": message,
+		}, headers)
+	default:
+		return fmt.Errorf("unsupported endpoint type %s", endpoint.Type)
+	}
+}
+
 func (s *Service) MaskConfig(endpoint models.NotificationEndpoint) map[string]string {
 	config := models.MustEndpointConfig(endpoint.Config)
 	switch endpoint.Type {

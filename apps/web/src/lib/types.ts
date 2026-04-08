@@ -55,6 +55,7 @@ export interface ApiEndpoint {
   name: string;
   type: EndpointType;
   enabled: boolean;
+  config: Record<string, string>;
   config_masked: Record<string, string>;
   created_at: string;
   updated_at: string;

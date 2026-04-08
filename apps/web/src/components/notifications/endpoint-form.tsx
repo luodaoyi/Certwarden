@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 
 import { Button } from "@/components/ui/button";
@@ -27,7 +27,7 @@ export interface EndpointPayload {
 }
 
 function endpointDefaults(endpoint?: ApiEndpoint): EndpointFormValues {
-  const config = endpoint?.config_masked ?? {};
+  const config = endpoint?.config ?? endpoint?.config_masked ?? {};
   return {
     name: endpoint?.name ?? "",
     type: endpoint?.type ?? "email",
@@ -63,7 +63,6 @@ export function EndpointForm({
 
   const values = form.watch();
   const endpointType = values.type;
-  const isEditingSameType = useMemo(() => Boolean(endpoint && endpoint.type === endpointType), [endpoint, endpointType]);
 
   const handleSubmit = form.handleSubmit(async (values) => {
     const config: Record<string, string> = {};
@@ -94,10 +93,10 @@ export function EndpointForm({
 
   const validationError = (() => {
     if (!values.name.trim()) return t("validation.nameRequired");
-    if (values.type === "email" && !values.recipient_email.trim() && !isEditingSameType) return t("validation.recipientEmailRequired");
-    if (values.type === "telegram" && !values.bot_token.trim() && !isEditingSameType) return t("validation.telegramBotTokenRequired");
-    if (values.type === "telegram" && !values.chat_id.trim() && !isEditingSameType) return t("validation.telegramChatIdRequired");
-    if (values.type === "webhook" && !values.url.trim() && !isEditingSameType) return t("validation.webhookUrlRequired");
+    if (values.type === "email" && !values.recipient_email.trim()) return t("validation.recipientEmailRequired");
+    if (values.type === "telegram" && !values.bot_token.trim()) return t("validation.telegramBotTokenRequired");
+    if (values.type === "telegram" && !values.chat_id.trim()) return t("validation.telegramChatIdRequired");
+    if (values.type === "webhook" && !values.url.trim()) return t("validation.webhookUrlRequired");
     return null;
   })();
 

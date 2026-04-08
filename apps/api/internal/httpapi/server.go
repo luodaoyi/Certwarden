@@ -93,6 +93,7 @@ func (s *Server) Router() http.Handler {
 			endpoints.Get("/", s.handleListEndpoints)
 			endpoints.Post("/", s.handleCreateEndpoint)
 			endpoints.Put("/{endpointID}", s.handleUpdateEndpoint)
+			endpoints.Post("/{endpointID}/test", s.handleTestEndpoint)
 			endpoints.Delete("/{endpointID}", s.handleDeleteEndpoint)
 		})
 
