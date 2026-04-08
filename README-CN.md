@@ -83,6 +83,21 @@ Certwarden 是一个自托管的 SSL/TLS 证书监控平台，面向多租户运
 | --- | --- |
 | ![Certwarden public status](docs/screenshots/public-status.png) | ![Certwarden admin](docs/screenshots/admin.png) |
 
+## 快速上手路径
+
+| 方式 | 适合场景 | 你需要做什么 |
+| --- | --- | --- |
+| Docker Compose | 快速自托管上线 | 复制 `.env.example`，执行 `docker compose up -d` |
+| 1Panel | 面板化运维部署 | 直接导入仓库里的 Compose 文件，并在面板中填写环境变量 |
+| 本地开发 | 功能开发与调试 | 分别启动 `apps/api` 与 `apps/web` |
+
+## 文档导航
+
+- [English README](./README.md)
+- [简体中文 README](./README-CN.md)
+- [v1.0.0 版本说明](https://github.com/luodaoyi/Certwarden/releases/tag/v1.0.0)
+- [GHCR 容器镜像](https://github.com/luodaoyi/Certwarden/pkgs/container/certwarden)
+
 ## 系统架构
 
 ```mermaid
@@ -121,6 +136,17 @@ CERTWARDEN_IMAGE=ghcr.io/luodaoyi/certwarden:v1.0.0
 默认对外端口：
 
 - `8080`：前端 + API
+
+### 使用 1Panel 部署
+
+Certwarden 第一版保持对 Compose 的直接兼容，因此可以直接把仓库内的 `docker-compose.yml` 导入 1Panel，而不需要额外制作应用市场包。
+
+推荐流程：
+
+1. 导入 `docker-compose.yml`
+2. 参考 `.env.example` 补齐环境变量
+3. 设置 `APP_BASE_URL`、数据库参数和初始化管理员账号
+4. 在 1Panel 内启动服务
 
 ### 本地开发
 

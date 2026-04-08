@@ -83,6 +83,21 @@ It fits teams that need:
 | --- | --- |
 | ![Certwarden public status](docs/screenshots/public-status.png) | ![Certwarden admin](docs/screenshots/admin.png) |
 
+## Start in Minutes
+
+| Option | Best for | What you do |
+| --- | --- | --- |
+| Docker Compose | Fast self-hosted deployment | Copy `.env.example`, then run `docker compose up -d` |
+| 1Panel | Panel-based deployment | Import the included Compose file and configure environment variables in the panel |
+| Local development | Feature work and debugging | Run Go API and Vite frontend separately from `apps/api` and `apps/web` |
+
+## Documentation
+
+- [English README](./README.md)
+- [简体中文 README](./README-CN.md)
+- [v1.0.0 Release Notes](https://github.com/luodaoyi/Certwarden/releases/tag/v1.0.0)
+- [GHCR Container Package](https://github.com/luodaoyi/Certwarden/pkgs/container/certwarden)
+
 ## Architecture
 
 ```mermaid
@@ -121,6 +136,17 @@ CERTWARDEN_IMAGE=ghcr.io/luodaoyi/certwarden:v1.0.0
 Default exposed port:
 
 - `8080` — frontend + API
+
+### Deploy with 1Panel
+
+Certwarden can also be deployed by importing the repository `docker-compose.yml` into 1Panel. The first release is intentionally kept Compose-friendly so it can be used directly without creating a custom marketplace package.
+
+Recommended flow:
+
+1. import `docker-compose.yml`
+2. copy values from `.env.example`
+3. set `APP_BASE_URL`, database settings, and bootstrap admin credentials
+4. start the stack from the panel
 
 ### Local Development
 
