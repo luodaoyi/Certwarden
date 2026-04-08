@@ -70,6 +70,10 @@
   @apply border border-border bg-background px-4 py-3;
 }
 
+@utility info-panel {
+  @apply border border-border bg-background px-4 py-4;
+}
+
 @utility field-note {
   @apply text-xs leading-5 text-muted-foreground;
 }

@@ -30,7 +30,7 @@ function SummaryCell({
 }) {
   return (
     <div className={cn("min-w-0", className)}>
-      <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">{label}</p>
+      <p className="section-heading">{label}</p>
       <div className={cn("mt-1 text-sm font-medium text-foreground", valueClassName)}>{value}</div>
     </div>
   );
@@ -84,8 +84,8 @@ function DetailTile({
   wide?: boolean;
 }) {
   return (
-    <div className={cn("border border-border bg-background px-3 py-3", wide && "md:col-span-2 xl:col-span-3")}>
-      <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">{label}</p>
+    <div className={cn("border border-border bg-background px-3 py-3 min-h-[92px]", wide && "md:col-span-2 xl:col-span-3")}>
+      <p className="section-heading">{label}</p>
       <p className={cn("mt-2 break-words text-sm text-foreground", mono && "font-mono text-[12px]")}>{value}</p>
     </div>
   );
@@ -122,7 +122,7 @@ export function DomainPanel({
 
   return (
     <article className={cn("overflow-hidden border border-border bg-card", className)}>
-      <div className="grid gap-4 px-4 py-3 xl:grid-cols-[minmax(260px,2.3fr)_88px_150px_150px_auto] xl:items-start">
+      <div className="grid gap-4 px-4 py-3 xl:grid-cols-[minmax(260px,2.35fr)_96px_168px_168px_auto] xl:items-start">
         <div className="min-w-0">
           <button
             type="button"
@@ -146,18 +146,21 @@ export function DomainPanel({
         <SummaryCell
           label={t("common.daysLeft")}
           value={domain.days_remaining ?? t("common.none")}
+          className="xl:border-l xl:border-border/70 xl:pl-4"
           valueClassName="whitespace-nowrap text-base font-semibold"
         />
         <SummaryCell
           label={t("common.validTo")}
+          className="xl:border-l xl:border-border/70 xl:pl-4"
           value={<SummaryDateValue locale={locale} value={domain.cert_expires_at} fallback={t("common.none")} />}
         />
         <SummaryCell
           label={t("common.lastChecked")}
+          className="xl:border-l xl:border-border/70 xl:pl-4"
           value={<SummaryDateValue locale={locale} value={domain.last_checked_at} fallback={t("common.none")} />}
         />
 
-        <div className="flex items-center justify-end gap-2 whitespace-nowrap xl:justify-self-end">
+        <div className="flex items-center justify-end gap-2 whitespace-nowrap xl:justify-self-end xl:border-l xl:border-border/70 xl:pl-4">
           {actions}
         </div>
       </div>
@@ -188,7 +191,7 @@ export function DomainPanel({
 
       {expanded ? (
         <div className="border-t border-border bg-secondary/35 p-4">
-          <div className="grid gap-3 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+          <div className="grid gap-4 xl:grid-cols-[minmax(0,1.45fr)_340px]">
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
               <DetailTile label={t("common.validFrom")} value={formatDateTime(domain.cert_valid_from)} />
               <DetailTile label={t("common.validTo")} value={formatDateTime(domain.cert_expires_at)} />
@@ -206,14 +209,14 @@ export function DomainPanel({
 
             <div className="space-y-3">
               {domain.last_error ? (
-                <div className="border border-destructive/40 bg-destructive/8 px-4 py-3">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-destructive">{t("status.error")}</p>
+                <div className="border border-destructive/40 bg-destructive/8 px-4 py-4">
+                  <p className="section-heading text-destructive">{t("status.error")}</p>
                   <p className="mt-2 text-sm text-destructive">{domain.last_error}</p>
                 </div>
               ) : null}
 
-              <div className="border border-border bg-background px-4 py-4">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">{t("domains.detectionNotes")}</p>
+              <div className="info-panel">
+                <p className="section-heading">{t("domains.detectionNotes")}</p>
                 <div className="mt-3 space-y-2 text-sm text-foreground">
                   <p>{t("domains.targetIpSummary", { value: targetIP })}</p>
                   <p>{t("domains.resolvedIpSummary", { value: resolvedIP })}</p>

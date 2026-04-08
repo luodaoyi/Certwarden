@@ -71,7 +71,7 @@ export function PolicyForm({
         <p className="text-sm font-medium">{t("notifications.channels")}</p>
         <div className="grid gap-2 sm:grid-cols-2">
           {endpoints.map((endpoint) => (
-            <label key={endpoint.id} className="flex min-h-11 items-center gap-2 border border-border bg-background px-3 py-2 text-sm">
+            <label key={endpoint.id} className="compact-list-row flex min-h-14 items-center gap-3 py-2 text-sm">
               <input
                 type="checkbox"
                 className="h-4 w-4 border border-border accent-primary"
@@ -88,9 +88,14 @@ export function PolicyForm({
                   );
                 }}
               />
-              <span className="truncate">{endpoint.name}</span>
-              <Badge className="ml-auto" variant="muted">
-                {t(endpoint.type === "email" ? "endpointType.email" : endpoint.type === "telegram" ? "endpointType.telegram" : "endpointType.webhook")}
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-medium text-foreground">{endpoint.name}</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {t(endpoint.type === "email" ? "endpointType.email" : endpoint.type === "telegram" ? "endpointType.telegram" : "endpointType.webhook")}
+                </p>
+              </div>
+              <Badge className="ml-auto" variant={endpoint.enabled ? "success" : "warning"}>
+                {endpoint.enabled ? t("common.enabled") : t("admin.disabledBadge")}
               </Badge>
             </label>
           ))}

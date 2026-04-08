@@ -11,9 +11,25 @@ import { apiRequest } from "@/lib/api";
 import { useApiErrorMessage } from "@/lib/api-error";
 import { useI18n } from "@/lib/i18n";
 import type { AdminTenantDetail, AdminTenantListItem } from "@/lib/types";
+import { cn } from "@/lib/utils";
 
 interface PasswordFormValues {
   password: string;
+}
+
+function SummaryTile({
+  label,
+  value,
+}: {
+  label: string;
+  value: string | number;
+}) {
+  return (
+    <div className="metric-tile min-h-[96px]">
+      <p className="section-heading">{label}</p>
+      <p className="mt-3 text-lg font-semibold text-foreground">{value}</p>
+    </div>
+  );
 }
 
 export function AdminPage() {
@@ -119,7 +135,12 @@ export function AdminPage() {
             <button
               key={item.tenant.id}
               type="button"
-              className={`w-full border px-4 py-4 text-left transition ${selectedTenantId === item.tenant.id ? "border-primary bg-secondary text-foreground shadow-[inset_3px_0_0_0_var(--color-primary)]" : "border-border bg-background text-foreground hover:bg-secondary/70"}`}
+              className={cn(
+                "compact-list-row w-full text-left transition",
+                selectedTenantId === item.tenant.id
+                  ? "border-primary bg-secondary text-foreground shadow-[inset_3px_0_0_0_var(--color-primary)]"
+                  : "hover:bg-secondary/70"
+              )}
               onClick={() => {
                 setSelectedTenantId(item.tenant.id);
                 setActionMessage(null);
@@ -127,24 +148,25 @@ export function AdminPage() {
               }}
             >
               <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0 flex-1 space-y-1">
-                  <p className="truncate text-sm font-semibold">{item.tenant.name}</p>
-                  <p className="truncate text-xs text-muted-foreground">{item.owner.username}</p>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-semibold text-foreground">{item.tenant.name}</p>
+                  <p className="mt-1 truncate text-xs text-muted-foreground">{item.owner.username}</p>
                 </div>
                 <Badge className="self-start" variant={item.tenant.disabled ? "warning" : "success"}>
                   {item.tenant.disabled ? t("admin.disabledBadge") : t("admin.activeBadge")}
                 </Badge>
               </div>
-              <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1 text-[11px]">
-                <div className="flex items-center justify-between gap-2">
-                  <dt className="text-muted-foreground">{t("admin.domainCountLabel")}</dt>
-                  <dd className="font-semibold text-foreground">{item.stats.domain_count}</dd>
+
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <div>
+                  <p className="section-heading">{t("admin.domainCountLabel")}</p>
+                  <p className="mt-2 text-sm font-semibold text-foreground">{item.stats.domain_count}</p>
                 </div>
-                <div className="flex items-center justify-between gap-2">
-                  <dt className="text-muted-foreground">{t("admin.errorCountLabel")}</dt>
-                  <dd className="font-semibold text-foreground">{item.stats.error_count}</dd>
+                <div>
+                  <p className="section-heading">{t("admin.errorCountLabel")}</p>
+                  <p className="mt-2 text-sm font-semibold text-foreground">{item.stats.error_count}</p>
                 </div>
-              </dl>
+              </div>
             </button>
           ))}
           {tenants.length === 0 ? <p className="text-sm text-muted-foreground">{t("admin.noTenants")}</p> : null}
@@ -160,50 +182,38 @@ export function AdminPage() {
                 <CardDescription>{t("admin.tenantDetailDescription", { tenantId: detail.tenant.id })}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-5">
-                <div className="grid gap-3 lg:grid-cols-[160px_minmax(0,1fr)_minmax(0,1fr)]">
-                  <div className="border border-border bg-background px-4 py-3">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">{t("common.status")}</p>
-                    <div className="mt-2">
+                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                  <SummaryTile label={t("admin.domainCountLabel")} value={detail.stats.domain_count} />
+                  <SummaryTile label={t("admin.healthyCountLabel")} value={detail.stats.healthy_count} />
+                  <SummaryTile label={t("admin.pendingCountLabel")} value={detail.stats.pending_count} />
+                  <SummaryTile label={t("admin.errorCountLabel")} value={detail.stats.error_count} />
+                </div>
+
+                <div className="grid gap-3 lg:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)]">
+                  <div className="info-panel">
+                    <p className="section-heading">{t("common.status")}</p>
+                    <div className="mt-3">
                       <Badge variant={detail.tenant.disabled ? "warning" : "success"}>
                         {detail.tenant.disabled ? t("admin.disabledBadge") : t("admin.activeBadge")}
                       </Badge>
                     </div>
                   </div>
-                  <div className="border border-border bg-background px-4 py-3">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">{t("common.username")}</p>
-                    <p className="mt-2 truncate text-sm font-semibold text-foreground">{detail.owner.username}</p>
+
+                  <div className="info-panel">
+                    <p className="section-heading">{t("common.username")}</p>
+                    <p className="mt-3 truncate text-sm font-semibold text-foreground">{detail.owner.username}</p>
                   </div>
-                  <div className="border border-border bg-background px-4 py-3">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">{t("common.email")}</p>
-                    <p className="mt-2 truncate text-sm text-foreground" title={detail.owner.email || t("settings.noEmailBound")}>
+
+                  <div className="info-panel">
+                    <p className="section-heading">{t("common.email")}</p>
+                    <p className="mt-3 truncate text-sm text-foreground" title={detail.owner.email || t("settings.noEmailBound")}>
                       {detail.owner.email || t("settings.noEmailBound")}
                     </p>
                   </div>
-                </div>
 
-                <div className="grid gap-3 md:grid-cols-4">
-                  <div className="border border-border bg-background px-4 py-3">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">{t("admin.domainCountLabel")}</p>
-                    <p className="mt-2 text-lg font-semibold">{detail.stats.domain_count}</p>
-                  </div>
-                  <div className="border border-border bg-background px-4 py-3">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">{t("admin.healthyCountLabel")}</p>
-                    <p className="mt-2 text-lg font-semibold">{detail.stats.healthy_count}</p>
-                  </div>
-                  <div className="border border-border bg-background px-4 py-3">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">{t("admin.pendingCountLabel")}</p>
-                    <p className="mt-2 text-lg font-semibold">{detail.stats.pending_count}</p>
-                  </div>
-                  <div className="border border-border bg-background px-4 py-3">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">{t("admin.errorCountLabel")}</p>
-                    <p className="mt-2 text-lg font-semibold">{detail.stats.error_count}</p>
-                  </div>
-                </div>
-
-                <div className="border border-border bg-background px-4 py-4">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">{t("admin.publicStatusPage")}</p>
-                  <div className="mt-2 flex flex-wrap items-center gap-3">
-                    <a className="truncate text-sm font-medium" href={detail.stats.public_status_url} target="_blank" rel="noreferrer">
+                  <div className="info-panel lg:col-span-2 xl:col-span-3">
+                    <p className="section-heading">{t("admin.publicStatusPage")}</p>
+                    <a className="mt-3 block truncate text-sm font-medium text-primary" href={detail.stats.public_status_url} target="_blank" rel="noreferrer">
                       {detail.stats.public_status_url}
                     </a>
                   </div>
@@ -211,57 +221,76 @@ export function AdminPage() {
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>{t("admin.tenantAccessTitle")}</CardTitle>
-                <CardDescription>{t("admin.tenantAccessDescription")}</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex flex-wrap gap-3">
-                  <Button
-                    variant={detail.tenant.disabled ? "command" : "outline"}
-                    onClick={() => void statusMutation.mutateAsync(!detail.tenant.disabled).catch((reason) => {
-                      setActionMessage(null);
-                      setActionError(getApiErrorMessage(reason, t("admin.tenantStatusError")));
-                    })}
-                  >
-                    {detail.tenant.disabled ? t("admin.enableTenant") : t("admin.disableTenant")}
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    onClick={() => void deleteMutation.mutateAsync().catch((reason) => {
-                      setActionMessage(null);
-                      setActionError(getApiErrorMessage(reason, t("admin.tenantDeleteError")));
-                    })}
-                  >
-                    {t("admin.deleteTenant")}
-                  </Button>
-                </div>
-                {actionMessage ? <p className="text-sm text-emerald-700">{actionMessage}</p> : null}
-                {actionError ? <p className="text-sm text-destructive">{actionError}</p> : null}
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>{t("admin.resetPasswordTitle")}</CardTitle>
-                <CardDescription>{t("admin.resetPasswordDescription")}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <form className="grid gap-4 md:max-w-md" onSubmit={(event) => void handlePasswordSubmit(event)}>
-                  <div className="space-y-2">
-                    <Label htmlFor="tenant-password">{t("common.newPassword")}</Label>
-                    <Input
-                      id="tenant-password"
-                      type="password"
-                      error={passwordForm.formState.errors.password?.message}
-                      {...passwordForm.register("password", { required: true, minLength: 8 })}
-                    />
+            <div className="grid gap-6 2xl:grid-cols-[minmax(0,1fr)_380px]">
+              <Card>
+                <CardHeader>
+                  <CardTitle>{t("admin.tenantAccessTitle")}</CardTitle>
+                  <CardDescription>{t("admin.tenantAccessDescription")}</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <div className="info-panel">
+                      <p className="section-heading">{t("common.status")}</p>
+                      <div className="mt-3">
+                        <Badge variant={detail.tenant.disabled ? "warning" : "success"}>
+                          {detail.tenant.disabled ? t("admin.disabledBadge") : t("admin.activeBadge")}
+                        </Badge>
+                      </div>
+                    </div>
+                    <div className="info-panel">
+                      <p className="section-heading">{t("common.username")}</p>
+                      <p className="mt-3 text-sm font-semibold text-foreground">{detail.owner.username}</p>
+                    </div>
                   </div>
-                  <Button className="w-fit" type="submit">{t("admin.updateTenantPassword")}</Button>
-                </form>
-              </CardContent>
-            </Card>
+
+                  <div className="action-row">
+                    <Button
+                      variant={detail.tenant.disabled ? "command" : "outline"}
+                      onClick={() => void statusMutation.mutateAsync(!detail.tenant.disabled).catch((reason) => {
+                        setActionMessage(null);
+                        setActionError(getApiErrorMessage(reason, t("admin.tenantStatusError")));
+                      })}
+                    >
+                      {detail.tenant.disabled ? t("admin.enableTenant") : t("admin.disableTenant")}
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      onClick={() => void deleteMutation.mutateAsync().catch((reason) => {
+                        setActionMessage(null);
+                        setActionError(getApiErrorMessage(reason, t("admin.tenantDeleteError")));
+                      })}
+                    >
+                      {t("admin.deleteTenant")}
+                    </Button>
+                  </div>
+                  {actionMessage ? <p className="text-sm text-emerald-700">{actionMessage}</p> : null}
+                  {actionError ? <p className="text-sm text-destructive">{actionError}</p> : null}
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>{t("admin.resetPasswordTitle")}</CardTitle>
+                  <CardDescription>{t("admin.resetPasswordDescription")}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <form className="space-y-4" onSubmit={(event) => void handlePasswordSubmit(event)}>
+                    <div className="space-y-2">
+                      <Label htmlFor="tenant-password">{t("common.newPassword")}</Label>
+                      <Input
+                        id="tenant-password"
+                        type="password"
+                        error={passwordForm.formState.errors.password?.message}
+                        {...passwordForm.register("password", { required: true, minLength: 8 })}
+                      />
+                    </div>
+                    <div className="action-row">
+                      <Button className="w-fit" type="submit">{t("admin.updateTenantPassword")}</Button>
+                    </div>
+                  </form>
+                </CardContent>
+              </Card>
+            </div>
           </>
         ) : (
           <Card>
