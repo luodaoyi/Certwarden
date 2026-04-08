@@ -1,6 +1,12 @@
 # Certwarden
 
 <p align="center">
+  <a href="https://github.com/luodaoyi/Certwarden/releases/tag/v1.0.0">
+    <img src="https://img.shields.io/badge/release-v1.0.0-1f6feb?style=flat-square" alt="Release v1.0.0" />
+  </a>
+</p>
+
+<p align="center">
   <img src="docs/branding/certwarden-banner.svg" alt="Certwarden banner" />
 </p>
 
