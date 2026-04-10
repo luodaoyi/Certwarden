@@ -1,6 +1,7 @@
 import { useMemo, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { LoaderCircle } from "lucide-react";
 
 import { DomainForm, type DomainPayload } from "@/components/domains/domain-form";
 import { DomainPanel } from "@/components/domains/domain-panel";
@@ -107,6 +108,7 @@ export function DashboardPage() {
   });
 
   const domains = useMemo(() => domainsQuery.data?.domains ?? [], [domainsQuery.data]);
+  const checkingDomainId = checkMutation.isPending ? checkMutation.variables : null;
   const publicStatus = publicStatusQuery.data;
   const effectivePublicTitle = resolvePublicStatusTitle(publicStatus?.tenant, t("statusPage.titleFallback"));
   const effectivePublicSubtitle = resolvePublicStatusSubtitle(publicStatus?.tenant, t("statusPage.subtitleFallback"));
@@ -238,30 +240,49 @@ export function DashboardPage() {
           {domains.length === 0 ? <p className="text-sm text-muted-foreground">{t("domains.empty")}</p> : null}
           {domains.length > 0 ? (
             <div className="space-y-3">
-              {domains.map((domain) => (
-                <DomainPanel
-                  key={domain.id}
-                  domain={domain}
-                  expanded={expandedDomainId === domain.id}
-                  onToggle={() => setExpandedDomainId((current) => (current === domain.id ? null : domain.id))}
-                  actions={(
-                    <>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setEditingDomain(domain);
-                          setExpandedDomainId(domain.id);
-                        }}
-                      >
-                        {t("common.edit")}
-                      </Button>
-                      <Button variant="command" size="sm" onClick={() => void checkMutation.mutateAsync(domain.id)}>{t("common.checkNow")}</Button>
-                      <Button variant="destructive" size="sm" onClick={() => void deleteMutation.mutateAsync(domain.id)}>{t("common.delete")}</Button>
-                    </>
-                  )}
-                />
-              ))}
+              {domains.map((domain) => {
+                const isChecking = checkingDomainId === domain.id;
+
+                return (
+                  <DomainPanel
+                    key={domain.id}
+                    domain={domain}
+                    expanded={expandedDomainId === domain.id}
+                    onToggle={() => setExpandedDomainId((current) => (current === domain.id ? null : domain.id))}
+                    actions={(
+                      <>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setEditingDomain(domain);
+                            setExpandedDomainId(domain.id);
+                          }}
+                        >
+                          {t("common.edit")}
+                        </Button>
+                        <Button
+                          variant="command"
+                          size="sm"
+                          aria-busy={isChecking}
+                          disabled={checkMutation.isPending}
+                          className={cn(
+                            "min-w-[124px]",
+                            isChecking && "border-[#d97757] bg-[#f2c4b1] text-[#2e1911] shadow-[0_0_0_1px_rgba(217,119,87,0.45),0_12px_26px_rgba(217,119,87,0.20)]"
+                          )}
+                          onClick={() => void checkMutation.mutateAsync(domain.id)}
+                        >
+                          {isChecking ? <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden="true" /> : null}
+                          {isChecking ? t("common.checking") : t("common.checkNow")}
+                        </Button>
+                        <Button variant="destructive" size="sm" onClick={() => void deleteMutation.mutateAsync(domain.id)}>
+                          {t("common.delete")}
+                        </Button>
+                      </>
+                    )}
+                  />
+                );
+              })}
             </div>
           ) : null}
         </CardContent>

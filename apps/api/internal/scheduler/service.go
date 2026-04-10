@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/luodaoyi/Certwarden/apps/api/internal/config"
+	"github.com/luodaoyi/Certwarden/apps/api/internal/crashlog"
 	"github.com/luodaoyi/Certwarden/apps/api/internal/models"
 	"github.com/luodaoyi/Certwarden/apps/api/internal/notify"
 	"github.com/luodaoyi/Certwarden/apps/api/internal/sslcheck"
@@ -51,11 +52,28 @@ func (s *Service) Start(ctx context.Context) {
 
 		for index := 0; index < s.cfg.ScanConcurrency; index++ {
 			s.workerGroup.Add(1)
-			go s.worker(runCtx, index)
+			workerIndex := index
+			go func() {
+				defer func() {
+					if recovered := recover(); recovered != nil {
+						crashlog.Log(s.logger, "scheduler worker panicked", recovered, "worker", workerIndex)
+						panic(recovered)
+					}
+				}()
+				s.worker(runCtx, workerIndex)
+			}()
 		}
 
 		s.loopGroup.Add(1)
-		go s.loop(runCtx)
+		go func() {
+			defer func() {
+				if recovered := recover(); recovered != nil {
+					crashlog.Log(s.logger, "scheduler loop panicked", recovered)
+					panic(recovered)
+				}
+			}()
+			s.loop(runCtx)
+		}()
 	})
 }
 
@@ -65,9 +83,9 @@ func (s *Service) Stop() {
 			s.cancel()
 		}
 		s.loopGroup.Wait()
-		if s.jobs != nil {
-			close(s.jobs)
-		}
+		// Workers exit on ctx.Done(), so keep the channel open here.
+		// Closing it races with the async enqueue goroutine below and can
+		// trigger `panic: send on closed channel` during shutdown.
 		s.workerGroup.Wait()
 	})
 }
@@ -148,6 +166,13 @@ func (s *Service) dispatchDueDomains(ctx context.Context) error {
 		case s.jobs <- domain.ID:
 		default:
 			go func(id uint) {
+				defer func() {
+					if recovered := recover(); recovered != nil {
+						crashlog.Log(s.logger, "scheduler enqueue goroutine panicked", recovered, "domain_id", id)
+						panic(recovered)
+					}
+				}()
+
 				select {
 				case <-ctx.Done():
 				case s.jobs <- id:

@@ -17,8 +17,8 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/luodaoyi/Certwarden/releases/tag/v1.0.0"><img src="https://img.shields.io/github/v/release/luodaoyi/Certwarden?display_name=tag&style=flat-square" alt="Latest release" /></a>
-  <a href="https://github.com/luodaoyi/Certwarden/releases/tag/v1.0.0"><img src="https://img.shields.io/github/release-date/luodaoyi/Certwarden?style=flat-square" alt="Release date" /></a>
+  <a href="https://github.com/luodaoyi/Certwarden/releases/tag/v1.0.1"><img src="https://img.shields.io/github/v/release/luodaoyi/Certwarden?display_name=tag&style=flat-square" alt="Latest release" /></a>
+  <a href="https://github.com/luodaoyi/Certwarden/releases/tag/v1.0.1"><img src="https://img.shields.io/github/release-date/luodaoyi/Certwarden?style=flat-square" alt="Release date" /></a>
   <a href="https://github.com/luodaoyi/Certwarden/actions/workflows/ci.yml"><img src="https://github.com/luodaoyi/Certwarden/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
   <a href="https://github.com/luodaoyi/Certwarden/actions/workflows/docker.yml"><img src="https://github.com/luodaoyi/Certwarden/actions/workflows/docker.yml/badge.svg" alt="Docker" /></a>
   <a href="https://github.com/luodaoyi/Certwarden/pkgs/container/certwarden"><img src="https://img.shields.io/badge/container-ghcr.io%2Fluodaoyi%2Fcertwarden-2496ED?style=flat-square&logo=docker&logoColor=white" alt="GHCR image" /></a>
@@ -33,7 +33,7 @@
 
 <p align="center">
   <a href="#quick-start"><strong>Quick Start</strong></a> ·
-  <a href="https://github.com/luodaoyi/Certwarden/releases/tag/v1.0.0"><strong>Release Notes</strong></a> ·
+  <a href="https://github.com/luodaoyi/Certwarden/releases/tag/v1.0.1"><strong>Release Notes</strong></a> ·
   <a href="https://github.com/luodaoyi/Certwarden/pkgs/container/certwarden"><strong>Container Image</strong></a> ·
   <a href="./README-CN.md"><strong>中文文档</strong></a>
 </p>
@@ -114,7 +114,7 @@ It fits teams that need:
 
 - [English README](./README.md)
 - [简体中文 README](./README-CN.md)
-- [v1.0.0 Release Notes](https://github.com/luodaoyi/Certwarden/releases/tag/v1.0.0)
+- [v1.0.1 Release Notes](https://github.com/luodaoyi/Certwarden/releases/tag/v1.0.1)
 - [GHCR Container Package](https://github.com/luodaoyi/Certwarden/pkgs/container/certwarden)
 
 ## Architecture

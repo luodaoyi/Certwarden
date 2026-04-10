@@ -9,6 +9,7 @@ import (
 
 	"github.com/luodaoyi/Certwarden/apps/api/internal/auth"
 	"github.com/luodaoyi/Certwarden/apps/api/internal/config"
+	"github.com/luodaoyi/Certwarden/apps/api/internal/crashlog"
 	"github.com/luodaoyi/Certwarden/apps/api/internal/database"
 	"github.com/luodaoyi/Certwarden/apps/api/internal/httpapi"
 	"github.com/luodaoyi/Certwarden/apps/api/internal/mailer"
@@ -60,29 +61,56 @@ func New(ctx context.Context, cfg config.Config, logger *slog.Logger) (*App, err
 	}, nil
 }
 
-func (a *App) Run(ctx context.Context) error {
+func (a *App) Run(ctx context.Context) (runErr error) {
 	a.scheduler.Start(ctx)
 
 	errCh := make(chan error, 1)
 	go func() {
+		defer func() {
+			if recovered := recover(); recovered != nil {
+				crashlog.Log(a.logger, "http server goroutine panicked", recovered, "addr", a.cfg.AppAddr)
+				select {
+				case errCh <- fmt.Errorf("http server goroutine panic: %v", recovered):
+				default:
+				}
+			}
+			close(errCh)
+		}()
+
 		a.logger.Info("http server listening", "addr", a.cfg.AppAddr)
 		if err := a.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			a.logger.Error("http server exited unexpectedly", "addr", a.cfg.AppAddr, "error", err)
 			errCh <- err
+			return
 		}
-		close(errCh)
+
+		a.logger.Info("http server stopped", "addr", a.cfg.AppAddr)
 	}()
 
 	select {
 	case <-ctx.Done():
-	case err := <-errCh:
-		if err != nil {
-			return err
+		a.logger.Warn("application context canceled", "error", ctx.Err(), "cause", context.Cause(ctx))
+	case err, ok := <-errCh:
+		if ok && err != nil {
+			runErr = err
+			break
 		}
+		a.logger.Warn("http server stopped without an explicit error", "addr", a.cfg.AppAddr)
 	}
 
+	a.logger.Info("stopping scheduler")
 	a.scheduler.Stop()
+	a.logger.Info("scheduler stopped")
 
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	return a.server.Shutdown(shutdownCtx)
+	if err := a.server.Shutdown(shutdownCtx); err != nil && err != http.ErrServerClosed {
+		if runErr != nil {
+			return fmt.Errorf("%w; shutdown server: %w", runErr, err)
+		}
+		return err
+	}
+
+	a.logger.Info("application shutdown completed")
+	return runErr
 }
