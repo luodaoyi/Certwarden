@@ -3,6 +3,9 @@ name: certwarden
 services:
   app:
     image: ${CERTWARDEN_IMAGE:-ghcr.io/luodaoyi/certwarden:latest}
+    dns_opt:
+      - timeout:5
+      - attempts:2
     environment:
       APP_ENV: ${APP_ENV:-production}
       APP_ADDR: ${APP_ADDR:-:8080}

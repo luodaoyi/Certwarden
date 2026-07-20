@@ -23,6 +23,10 @@ const (
 	EventThreshold = "threshold_reached"
 	EventExpired   = "expired"
 	EventRecovered = "recovered"
+
+	LanguageEnglish            = "en"
+	LanguageSimplifiedChinese  = "zh-CN"
+	LanguageTraditionalChinese = "zh-TW"
 )
 
 type PolicyView struct {
@@ -179,12 +183,6 @@ func (s *Service) MaybeNotify(ctx context.Context, domain models.Domain, previou
 func (s *Service) TestEndpoint(ctx context.Context, endpoint models.NotificationEndpoint) error {
 	config := models.MustEndpointConfig(endpoint.Config)
 	timestamp := s.now().Format(time.RFC3339)
-	message := strings.Join([]string{
-		"Certwarden test notification",
-		fmt.Sprintf("Endpoint: %s", endpoint.Name),
-		fmt.Sprintf("Type: %s", endpoint.Type),
-		fmt.Sprintf("Time: %s", timestamp),
-	}, "\n")
 
 	switch endpoint.Type {
 	case models.NotificationEndpointEmail:
@@ -192,6 +190,7 @@ func (s *Service) TestEndpoint(ctx context.Context, endpoint models.Notification
 		if recipient == "" {
 			return models.ErrInvalidEndpointConfig
 		}
+		message := formatTestMessage(endpoint, LanguageEnglish, timestamp)
 		return s.mailer.Send(ctx, mailer.Message{
 			To:      recipient,
 			Subject: "[Certwarden] Test notification",
@@ -203,6 +202,7 @@ func (s *Service) TestEndpoint(ctx context.Context, endpoint models.Notification
 		if botToken == "" || chatID == "" {
 			return models.ErrInvalidEndpointConfig
 		}
+		message := formatTestMessage(endpoint, notificationLanguage(config), timestamp)
 		return s.postJSON(ctx, fmt.Sprintf("https://api.telegram.org/bot%s/sendMessage", botToken), map[string]string{
 			"chat_id": chatID,
 			"text":    message,
@@ -212,6 +212,7 @@ func (s *Service) TestEndpoint(ctx context.Context, endpoint models.Notification
 		if targetURL == "" {
 			return models.ErrInvalidEndpointConfig
 		}
+		message := formatTestMessage(endpoint, LanguageEnglish, timestamp)
 		headers := map[string]string{}
 		if headerName := strings.TrimSpace(config["auth_header_name"]); headerName != "" {
 			headers[headerName] = config["auth_header_value"]
@@ -384,7 +385,6 @@ func (s *Service) deliverEvent(ctx context.Context, domain models.Domain, endpoi
 
 func (s *Service) send(ctx context.Context, endpoint models.NotificationEndpoint, body payload) error {
 	config := models.MustEndpointConfig(endpoint.Config)
-	message := formatMessage(body)
 
 	switch endpoint.Type {
 	case models.NotificationEndpointEmail:
@@ -395,7 +395,7 @@ func (s *Service) send(ctx context.Context, endpoint models.NotificationEndpoint
 		return s.mailer.Send(ctx, mailer.Message{
 			To:      recipient,
 			Subject: fmt.Sprintf("[Certwarden] %s %s", body.EventType, body.Hostname),
-			Body:    message,
+			Body:    formatMessage(body, LanguageEnglish),
 		})
 	case models.NotificationEndpointTelegram:
 		botToken := strings.TrimSpace(config["bot_token"])
@@ -405,7 +405,7 @@ func (s *Service) send(ctx context.Context, endpoint models.NotificationEndpoint
 		}
 		payload := map[string]string{
 			"chat_id": chatID,
-			"text":    message,
+			"text":    formatMessage(body, notificationLanguage(config)),
 		}
 		return s.postJSON(ctx, fmt.Sprintf("https://api.telegram.org/bot%s/sendMessage", botToken), payload, nil)
 	case models.NotificationEndpointWebhook:
@@ -450,22 +450,161 @@ func (s *Service) postJSON(ctx context.Context, targetURL string, body any, head
 	return nil
 }
 
-func formatMessage(body payload) string {
+func formatMessage(body payload, language string) string {
+	labels := messageLabelsFor(language)
 	parts := []string{
-		fmt.Sprintf("Event: %s", body.EventType),
-		fmt.Sprintf("Domain: %s:%d", body.Hostname, body.Port),
-		fmt.Sprintf("Status: %s", body.Status),
+		fmt.Sprintf("%s: %s", labels.Event, localizeEvent(body.EventType, language)),
+		fmt.Sprintf("%s: %s:%d", labels.Domain, body.Hostname, body.Port),
+		fmt.Sprintf("%s: %s", labels.Status, localizeStatus(body.Status, language)),
 	}
 	if body.DaysRemaining != nil {
-		parts = append(parts, fmt.Sprintf("Days remaining: %d", *body.DaysRemaining))
+		parts = append(parts, fmt.Sprintf("%s: %d", labels.DaysRemaining, *body.DaysRemaining))
 	}
 	if body.CertExpiresAt != nil {
-		parts = append(parts, fmt.Sprintf("Certificate expires at: %s", body.CertExpiresAt.Format(time.RFC3339)))
+		parts = append(parts, fmt.Sprintf("%s: %s", labels.CertExpiresAt, body.CertExpiresAt.Format(time.RFC3339)))
 	}
 	if body.ThresholdDays > 0 {
-		parts = append(parts, fmt.Sprintf("Threshold: %d days", body.ThresholdDays))
+		parts = append(parts, fmt.Sprintf(labels.Threshold, body.ThresholdDays))
 	}
 	return strings.Join(parts, "\n")
+}
+
+type messageLabels struct {
+	TestTitle     string
+	Endpoint      string
+	Type          string
+	Time          string
+	Event         string
+	Domain        string
+	Status        string
+	DaysRemaining string
+	CertExpiresAt string
+	Threshold     string
+}
+
+func notificationLanguage(config map[string]string) string {
+	switch strings.TrimSpace(config["language"]) {
+	case LanguageSimplifiedChinese:
+		return LanguageSimplifiedChinese
+	case LanguageTraditionalChinese:
+		return LanguageTraditionalChinese
+	default:
+		return LanguageEnglish
+	}
+}
+
+func IsSupportedLanguage(language string) bool {
+	switch strings.TrimSpace(language) {
+	case "", LanguageEnglish, LanguageSimplifiedChinese, LanguageTraditionalChinese:
+		return true
+	default:
+		return false
+	}
+}
+
+func formatTestMessage(endpoint models.NotificationEndpoint, language, timestamp string) string {
+	labels := messageLabelsFor(language)
+	return strings.Join([]string{
+		labels.TestTitle,
+		fmt.Sprintf("%s: %s", labels.Endpoint, endpoint.Name),
+		fmt.Sprintf("%s: %s", labels.Type, endpoint.Type),
+		fmt.Sprintf("%s: %s", labels.Time, timestamp),
+	}, "\n")
+}
+
+func messageLabelsFor(language string) messageLabels {
+	switch language {
+	case LanguageSimplifiedChinese:
+		return messageLabels{
+			TestTitle:     "Certwarden 测试通知",
+			Endpoint:      "通知端点",
+			Type:          "类型",
+			Time:          "时间",
+			Event:         "事件",
+			Domain:        "域名",
+			Status:        "状态",
+			DaysRemaining: "剩余天数",
+			CertExpiresAt: "证书到期时间",
+			Threshold:     "提醒阈值: %d 天",
+		}
+	case LanguageTraditionalChinese:
+		return messageLabels{
+			TestTitle:     "Certwarden 測試通知",
+			Endpoint:      "通知端點",
+			Type:          "類型",
+			Time:          "時間",
+			Event:         "事件",
+			Domain:        "網域",
+			Status:        "狀態",
+			DaysRemaining: "剩餘天數",
+			CertExpiresAt: "憑證到期時間",
+			Threshold:     "提醒門檻: %d 天",
+		}
+	default:
+		return messageLabels{
+			TestTitle:     "Certwarden test notification",
+			Endpoint:      "Endpoint",
+			Type:          "Type",
+			Time:          "Time",
+			Event:         "Event",
+			Domain:        "Domain",
+			Status:        "Status",
+			DaysRemaining: "Days remaining",
+			CertExpiresAt: "Certificate expires at",
+			Threshold:     "Threshold: %d days",
+		}
+	}
+}
+
+func localizeEvent(eventType, language string) string {
+	if language == LanguageEnglish {
+		return eventType
+	}
+
+	switch eventType {
+	case EventThreshold:
+		if language == LanguageTraditionalChinese {
+			return "達到提醒門檻"
+		}
+		return "达到提醒阈值"
+	case EventExpired:
+		if language == LanguageTraditionalChinese {
+			return "憑證已過期"
+		}
+		return "证书已过期"
+	case EventRecovered:
+		if language == LanguageTraditionalChinese {
+			return "憑證恢復正常"
+		}
+		return "证书恢复正常"
+	default:
+		return eventType
+	}
+}
+
+func localizeStatus(status, language string) string {
+	if language == LanguageEnglish {
+		return status
+	}
+
+	traditional := language == LanguageTraditionalChinese
+	switch status {
+	case string(models.DomainStatusHealthy):
+		if traditional {
+			return "正常"
+		}
+		return "正常"
+	case string(models.DomainStatusError):
+		if traditional {
+			return "異常"
+		}
+		return "异常"
+	default:
+		if traditional {
+			return "待檢測"
+		}
+		return "待检测"
+	}
 }
 
 func normalizeThresholds(values []int) []int {

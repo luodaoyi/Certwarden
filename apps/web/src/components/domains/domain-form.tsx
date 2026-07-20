@@ -108,7 +108,13 @@ export function DomainForm({
   }, [domain, form]);
 
   const handleSubmit = form.handleSubmit(async (values) => {
-    await onSubmit(values);
+    try {
+      await onSubmit(values);
+    } catch {
+      // Parent owns error UX; keep entered values and avoid unhandled rejections.
+      return;
+    }
+
     if (!domain) {
       form.reset(defaultValues());
     }

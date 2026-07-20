@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/luodaoyi/Certwarden/apps/api/internal/models"
+	"github.com/luodaoyi/Certwarden/apps/api/internal/notify"
 	"github.com/luodaoyi/Certwarden/apps/api/internal/testutil"
 )
 
@@ -438,10 +439,36 @@ func TestTelegramEndpointRequiresBotTokenAndChatID(t *testing.T) {
 		"config": map[string]string{
 			"bot_token": "123456:tenant-bot-token",
 			"chat_id":   "99887766",
+			"language":  notify.LanguageSimplifiedChinese,
 		},
 	}, loginPayload.Tokens.AccessToken)
 	if validResp.Code != http.StatusCreated {
 		t.Fatalf("expected telegram endpoint with bot token and chat id to succeed, got %d (%s)", validResp.Code, validResp.Body.String())
+	}
+	var validPayload struct {
+		Endpoint struct {
+			Config map[string]string `json:"config"`
+		} `json:"endpoint"`
+	}
+	if err := json.Unmarshal(validResp.Body.Bytes(), &validPayload); err != nil {
+		t.Fatalf("decode telegram endpoint: %v", err)
+	}
+	if validPayload.Endpoint.Config["language"] != notify.LanguageSimplifiedChinese {
+		t.Fatalf("expected telegram language to persist, got %+v", validPayload.Endpoint.Config)
+	}
+
+	unsupportedResp := performJSONRequest(t, router, http.MethodPost, "/api/notification-endpoints", map[string]any{
+		"name":    "Unsupported Telegram",
+		"type":    "telegram",
+		"enabled": true,
+		"config": map[string]string{
+			"bot_token": "123456:tenant-bot-token",
+			"chat_id":   "99887766",
+			"language":  "fr",
+		},
+	}, loginPayload.Tokens.AccessToken)
+	if unsupportedResp.Code != http.StatusBadRequest {
+		t.Fatalf("expected unsupported telegram language to fail with 400, got %d (%s)", unsupportedResp.Code, unsupportedResp.Body.String())
 	}
 }
 

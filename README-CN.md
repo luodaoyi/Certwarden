@@ -17,8 +17,8 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/luodaoyi/Certwarden/releases/tag/v1.0.1"><img src="https://img.shields.io/github/v/release/luodaoyi/Certwarden?display_name=tag&style=flat-square" alt="Latest release" /></a>
-  <a href="https://github.com/luodaoyi/Certwarden/releases/tag/v1.0.1"><img src="https://img.shields.io/github/release-date/luodaoyi/Certwarden?style=flat-square" alt="Release date" /></a>
+  <a href="https://github.com/luodaoyi/Certwarden/releases/tag/v1.1.0"><img src="https://img.shields.io/github/v/release/luodaoyi/Certwarden?display_name=tag&style=flat-square" alt="Latest release" /></a>
+  <a href="https://github.com/luodaoyi/Certwarden/releases/tag/v1.1.0"><img src="https://img.shields.io/github/release-date/luodaoyi/Certwarden?style=flat-square" alt="Release date" /></a>
   <a href="https://github.com/luodaoyi/Certwarden/actions/workflows/ci.yml"><img src="https://github.com/luodaoyi/Certwarden/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
   <a href="https://github.com/luodaoyi/Certwarden/actions/workflows/docker.yml"><img src="https://github.com/luodaoyi/Certwarden/actions/workflows/docker.yml/badge.svg" alt="Docker" /></a>
   <a href="https://github.com/luodaoyi/Certwarden/pkgs/container/certwarden"><img src="https://img.shields.io/badge/container-ghcr.io%2Fluodaoyi%2Fcertwarden-2496ED?style=flat-square&logo=docker&logoColor=white" alt="GHCR image" /></a>
@@ -33,7 +33,7 @@
 
 <p align="center">
   <a href="#快速开始"><strong>快速开始</strong></a> ·
-  <a href="https://github.com/luodaoyi/Certwarden/releases/tag/v1.0.1"><strong>版本发布</strong></a> ·
+  <a href="https://github.com/luodaoyi/Certwarden/releases/tag/v1.1.0"><strong>版本发布</strong></a> ·
   <a href="https://github.com/luodaoyi/Certwarden/pkgs/container/certwarden"><strong>容器镜像</strong></a> ·
   <a href="./README.md"><strong>English README</strong></a>
 </p>
@@ -70,6 +70,7 @@ Certwarden 是一个自托管的 SSL/TLS 证书监控平台，面向多租户运
 - **租户公开状态页**：每个租户自动拥有 `/status/{tenantId}` 页面
 - **通知端点测试**：可在界面中直接测试 Email、Telegram、Webhook 是否可达
 - **租户自定义 Telegram Bot**：每个 Telegram 端点可单独配置 Bot Token 与 Chat ID
+- **Telegram 通知多语言**：每个 Telegram 端点可单独选择英文、简体中文或繁体中文
 - **管理员后台**：支持租户管理、禁用访问、删除租户、重置密码
 - **多语言界面**：English、简体中文、繁體中文、Español、Français、Deutsch、Русский、العربية、Português、日本語、한국어、हिन्दी、Italiano
 
@@ -114,7 +115,7 @@ Certwarden 是一个自托管的 SSL/TLS 证书监控平台，面向多租户运
 
 - [English README](./README.md)
 - [简体中文 README](./README-CN.md)
-- [v1.0.1 版本说明](https://github.com/luodaoyi/Certwarden/releases/tag/v1.0.1)
+- [v1.1.0 版本说明](https://github.com/luodaoyi/Certwarden/releases/tag/v1.1.0)
 - [GHCR 容器镜像](https://github.com/luodaoyi/Certwarden/pkgs/container/certwarden)
 
 ## 系统架构

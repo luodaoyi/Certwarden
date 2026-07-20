@@ -17,8 +17,8 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/luodaoyi/Certwarden/releases/tag/v1.0.1"><img src="https://img.shields.io/github/v/release/luodaoyi/Certwarden?display_name=tag&style=flat-square" alt="Latest release" /></a>
-  <a href="https://github.com/luodaoyi/Certwarden/releases/tag/v1.0.1"><img src="https://img.shields.io/github/release-date/luodaoyi/Certwarden?style=flat-square" alt="Release date" /></a>
+  <a href="https://github.com/luodaoyi/Certwarden/releases/tag/v1.1.0"><img src="https://img.shields.io/github/v/release/luodaoyi/Certwarden?display_name=tag&style=flat-square" alt="Latest release" /></a>
+  <a href="https://github.com/luodaoyi/Certwarden/releases/tag/v1.1.0"><img src="https://img.shields.io/github/release-date/luodaoyi/Certwarden?style=flat-square" alt="Release date" /></a>
   <a href="https://github.com/luodaoyi/Certwarden/actions/workflows/ci.yml"><img src="https://github.com/luodaoyi/Certwarden/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
   <a href="https://github.com/luodaoyi/Certwarden/actions/workflows/docker.yml"><img src="https://github.com/luodaoyi/Certwarden/actions/workflows/docker.yml/badge.svg" alt="Docker" /></a>
   <a href="https://github.com/luodaoyi/Certwarden/pkgs/container/certwarden"><img src="https://img.shields.io/badge/container-ghcr.io%2Fluodaoyi%2Fcertwarden-2496ED?style=flat-square&logo=docker&logoColor=white" alt="GHCR image" /></a>
@@ -33,7 +33,7 @@
 
 <p align="center">
   <a href="#quick-start"><strong>Quick Start</strong></a> ·
-  <a href="https://github.com/luodaoyi/Certwarden/releases/tag/v1.0.1"><strong>Release Notes</strong></a> ·
+  <a href="https://github.com/luodaoyi/Certwarden/releases/tag/v1.1.0"><strong>Release Notes</strong></a> ·
   <a href="https://github.com/luodaoyi/Certwarden/pkgs/container/certwarden"><strong>Container Image</strong></a> ·
   <a href="./README-CN.md"><strong>中文文档</strong></a>
 </p>
@@ -70,6 +70,7 @@ It fits teams that need:
 - **Public status pages** — every tenant gets an independent `/status/{tenantId}` page
 - **Notification endpoint testing** — verify Email, Telegram, and Webhook delivery from the UI
 - **Tenant-managed Telegram bots** — each endpoint can use its own Bot Token and Chat ID
+- **Localized Telegram alerts** — choose English, Simplified Chinese, or Traditional Chinese per Telegram endpoint
 - **Admin console** — manage tenants, disable access, delete tenants, and reset passwords
 - **Internationalized UI** — English, 简体中文, 繁體中文, Español, Français, Deutsch, Русский, العربية, Português, 日本語, 한국어, हिन्दी, Italiano
 
@@ -114,7 +115,7 @@ It fits teams that need:
 
 - [English README](./README.md)
 - [简体中文 README](./README-CN.md)
-- [v1.0.1 Release Notes](https://github.com/luodaoyi/Certwarden/releases/tag/v1.0.1)
+- [v1.1.0 Release Notes](https://github.com/luodaoyi/Certwarden/releases/tag/v1.1.0)
 - [GHCR Container Package](https://github.com/luodaoyi/Certwarden/pkgs/container/certwarden)
 
 ## Architecture

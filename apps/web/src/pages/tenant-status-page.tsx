@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { apiRequest } from "@/lib/api";
+import { sortDomainsByCertExpiryAsc } from "@/lib/certificate-age";
 import { useI18n } from "@/lib/i18n";
 import { resolvePublicStatusSubtitle, resolvePublicStatusTitle } from "@/lib/public-status";
 import type { DomainStatus, PublicTenantStatus } from "@/lib/types";
@@ -41,6 +42,12 @@ export function TenantStatusPage() {
     if (status === "error") return t("status.error");
     return t("status.pending");
   }, [payload?.summary.overall_status, t]);
+
+  // Sort a copy for display only; payload.domains from the query stays untouched.
+  const sortedDomains = useMemo(
+    () => sortDomainsByCertExpiryAsc(payload?.domains ?? []),
+    [payload?.domains],
+  );
 
   const pageTitle = resolvePublicStatusTitle(payload?.tenant, t("statusPage.titleFallback"));
   const pageSubtitle = resolvePublicStatusSubtitle(payload?.tenant, t("statusPage.subtitleFallback"));
@@ -110,8 +117,8 @@ export function TenantStatusPage() {
                 <CardTitle>{t("statusPage.domainOverview")}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                {payload.domains.length === 0 ? <p className="text-sm text-muted-foreground">{t("statusPage.empty")}</p> : null}
-                {payload.domains.map((domain) => (
+                {sortedDomains.length === 0 ? <p className="text-sm text-muted-foreground">{t("statusPage.empty")}</p> : null}
+                {sortedDomains.map((domain) => (
                   <DomainPanel
                     key={domain.id}
                     domain={domain}

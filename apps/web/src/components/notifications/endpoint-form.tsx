@@ -7,6 +7,15 @@ import { Label } from "@/components/ui/label";
 import { useI18n } from "@/lib/i18n";
 import type { ApiEndpoint, EndpointType } from "@/lib/types";
 
+type TelegramLanguage = "en" | "zh-CN" | "zh-TW";
+
+function normalizeTelegramLanguage(value?: string): TelegramLanguage {
+  if (value === "zh-CN" || value === "zh-TW" || value === "en") {
+    return value;
+  }
+  return "en";
+}
+
 interface EndpointFormValues {
   name: string;
   type: EndpointType;
@@ -14,6 +23,7 @@ interface EndpointFormValues {
   recipient_email: string;
   bot_token: string;
   chat_id: string;
+  language: TelegramLanguage;
   url: string;
   auth_header_name: string;
   auth_header_value: string;
@@ -35,6 +45,7 @@ function endpointDefaults(endpoint?: ApiEndpoint): EndpointFormValues {
     recipient_email: config.recipient_email ?? "",
     bot_token: config.bot_token ?? "",
     chat_id: config.chat_id ?? "",
+    language: normalizeTelegramLanguage(config.language),
     url: config.url ?? "",
     auth_header_name: config.auth_header_name ?? "",
     auth_header_value: config.auth_header_value ?? "",
@@ -72,6 +83,7 @@ export function EndpointForm({
     if (values.type === "telegram") {
       config.bot_token = values.bot_token;
       config.chat_id = values.chat_id;
+      config.language = normalizeTelegramLanguage(values.language);
     }
     if (values.type === "webhook") {
       config.url = values.url;
@@ -147,6 +159,18 @@ export function EndpointForm({
               placeholder={t("notifications.telegramChatPlaceholder")}
               {...form.register("chat_id")}
             />
+          </div>
+          <div className="space-y-2 md:col-span-2">
+            <Label htmlFor="endpoint-telegram-language">{t("notifications.telegramLanguageLabel")}</Label>
+            <select
+              id="endpoint-telegram-language"
+              className="form-select"
+              {...form.register("language")}
+            >
+              <option value="en">{t("notifications.telegramLanguageOptionEn")}</option>
+              <option value="zh-CN">{t("notifications.telegramLanguageOptionZhCN")}</option>
+              <option value="zh-TW">{t("notifications.telegramLanguageOptionZhTW")}</option>
+            </select>
           </div>
         </>
       ) : null}

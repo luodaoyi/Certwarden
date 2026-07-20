@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 import { DomainForm } from "@/components/domains/domain-form";
@@ -42,5 +42,57 @@ describe("DomainForm", () => {
       hostname: "example.com",
       check_interval_seconds: 7200,
     }));
+  });
+
+  it("resets fields after a successful add", async () => {
+    const user = userEvent.setup();
+    const onSubmit = vi.fn().mockResolvedValue(undefined);
+
+    render(
+      <I18nProvider>
+        <DomainForm submitLabel="Add domain" onSubmit={onSubmit} />
+      </I18nProvider>
+    );
+
+    const hostname = screen.getByLabelText(/hostname/i);
+    await user.type(hostname, "success.example.com");
+    await user.click(screen.getByRole("button", { name: /add domain/i }));
+
+    expect(onSubmit).toHaveBeenCalled();
+    await waitFor(() => {
+      expect(hostname).toHaveValue("");
+    });
+  });
+
+  it("keeps entered values when submit fails and does not surface unhandled rejection", async () => {
+    const user = userEvent.setup();
+    const onSubmit = vi.fn().mockRejectedValue(new Error("save failed"));
+    const unhandled: unknown[] = [];
+    const onUnhandled = (event: PromiseRejectionEvent) => {
+      unhandled.push(event.reason);
+      event.preventDefault();
+    };
+    window.addEventListener("unhandledrejection", onUnhandled);
+
+    try {
+      render(
+        <I18nProvider>
+          <DomainForm submitLabel="Add domain" onSubmit={onSubmit} />
+        </I18nProvider>
+      );
+
+      const hostname = screen.getByLabelText(/hostname/i);
+      await user.type(hostname, "keep.example.com");
+      await user.click(screen.getByRole("button", { name: /add domain/i }));
+
+      expect(onSubmit).toHaveBeenCalled();
+      expect(hostname).toHaveValue("keep.example.com");
+      // Allow any microtasks from the rejected submit path to flush.
+      await Promise.resolve();
+      await Promise.resolve();
+      expect(unhandled).toEqual([]);
+    } finally {
+      window.removeEventListener("unhandledrejection", onUnhandled);
+    }
   });
 });

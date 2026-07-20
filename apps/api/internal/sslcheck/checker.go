@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"crypto/tls"
+	"crypto/x509"
 	"encoding/hex"
 	"fmt"
 	"math"
@@ -76,6 +77,9 @@ func (c *Checker) Check(ctx context.Context, hostname string, port int, targetIP
 			tlsConfig.MinVersion = tls.VersionTLS12
 		}
 	}
+	verifyCertificate := !tlsConfig.InsecureSkipVerify
+	// Finish the handshake so expired or otherwise invalid certificates can still be inspected.
+	tlsConfig.InsecureSkipVerify = true
 
 	rawConn, err := dialer.DialContext(ctx, "tcp", addr)
 	if err != nil {
@@ -114,7 +118,7 @@ func (c *Checker) Check(ctx context.Context, hostname string, port int, targetIP
 	daysRemaining := int(math.Floor(expiresAt.Sub(now).Hours() / 24))
 	fingerprint := sha256.Sum256(leaf.Raw)
 
-	return Result{
+	result := Result{
 		Status:                 models.DomainStatusHealthy,
 		CheckedAt:              now,
 		ResolvedIP:             resolvedIP,
@@ -129,6 +133,23 @@ func (c *Checker) Check(ctx context.Context, hostname string, port int, targetIP
 		CertFingerprintSHA256:  strings.ToUpper(hex.EncodeToString(fingerprint[:])),
 		CertSignatureAlgorithm: leaf.SignatureAlgorithm.String(),
 	}
+	if verifyCertificate {
+		intermediates := x509.NewCertPool()
+		for _, certificate := range certs[1:] {
+			intermediates.AddCert(certificate)
+		}
+		if _, err := leaf.Verify(x509.VerifyOptions{
+			DNSName:       tlsConfig.ServerName,
+			Roots:         tlsConfig.RootCAs,
+			Intermediates: intermediates,
+			CurrentTime:   now,
+		}); err != nil {
+			result.Status = models.DomainStatusError
+			result.Error = fmt.Sprintf("tls: failed to verify certificate: %v", err)
+		}
+	}
+
+	return result
 }
 
 func (r Result) MustHealthy() error {

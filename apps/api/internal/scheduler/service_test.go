@@ -17,6 +17,15 @@ func TestResolveIntervalUsesDomainOverride(t *testing.T) {
 	}
 }
 
+func TestCalculateDaysRemainingTracksExpiredCertificate(t *testing.T) {
+	expiresAt := time.Date(2026, time.July, 15, 23, 59, 59, 0, time.UTC)
+	now := time.Date(2026, time.July, 20, 2, 25, 33, 0, time.UTC)
+
+	if got := calculateDaysRemaining(expiresAt, now); got != -5 {
+		t.Fatalf("expected -5 days remaining, got %d", got)
+	}
+}
+
 func TestStopLeavesJobsChannelOpen(t *testing.T) {
 	_, cancel := context.WithCancel(context.Background())
 	service := &Service{

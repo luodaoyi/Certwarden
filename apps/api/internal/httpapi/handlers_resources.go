@@ -539,6 +539,9 @@ func validateEndpointConfig(endpointType models.NotificationEndpointType, config
 		if strings.TrimSpace(config["bot_token"]) == "" || strings.TrimSpace(config["chat_id"]) == "" {
 			return models.ErrInvalidEndpointConfig
 		}
+		if !notify.IsSupportedLanguage(config["language"]) {
+			return models.ErrInvalidEndpointConfig
+		}
 	case models.NotificationEndpointWebhook:
 		if strings.TrimSpace(config["url"]) == "" {
 			return models.ErrInvalidEndpointConfig
@@ -572,7 +575,7 @@ func mergeEndpointConfig(
 	case models.NotificationEndpointEmail:
 		keysToPreserve = []string{"recipient_email"}
 	case models.NotificationEndpointTelegram:
-		keysToPreserve = []string{"bot_token", "chat_id"}
+		keysToPreserve = []string{"bot_token", "chat_id", "language"}
 	case models.NotificationEndpointWebhook:
 		keysToPreserve = []string{"url"}
 	}

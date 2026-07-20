@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"math"
 	"sync"
 	"time"
 
@@ -242,7 +243,7 @@ func (s *Service) processDomain(ctx context.Context, domainID uint) (*models.Dom
 		if result.ResolvedIP != "" {
 			updates["resolved_ip"] = result.ResolvedIP
 		}
-		if result.Status == models.DomainStatusHealthy {
+		if result.CertExpiresAt != nil {
 			updates["cert_valid_from"] = result.CertValidFrom
 			updates["cert_expires_at"] = result.CertExpiresAt
 			updates["days_remaining"] = result.DaysRemaining
@@ -253,6 +254,10 @@ func (s *Service) processDomain(ctx context.Context, domainID uint) (*models.Dom
 			updates["cert_serial_number"] = result.CertSerialNumber
 			updates["cert_fingerprint_sha256"] = result.CertFingerprintSHA256
 			updates["cert_signature_algorithm"] = result.CertSignatureAlgorithm
+		} else if domain.CertExpiresAt != nil {
+			updates["days_remaining"] = calculateDaysRemaining(*domain.CertExpiresAt, result.CheckedAt)
+		}
+		if result.Status == models.DomainStatusHealthy {
 			updates["last_error"] = ""
 			updates["last_successful_at"] = result.CheckedAt
 		} else {
@@ -287,6 +292,10 @@ func cloneIntPtr(value *int) *int {
 	}
 	copied := *value
 	return &copied
+}
+
+func calculateDaysRemaining(expiresAt time.Time, now time.Time) int {
+	return int(math.Floor(expiresAt.Sub(now).Hours() / 24))
 }
 
 func (s *Service) ForceDue(ctx context.Context, domainID uint) error {
