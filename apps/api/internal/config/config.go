@@ -79,6 +79,9 @@ func Load() (Config, error) {
 	if cfg.ScanConcurrency < 1 {
 		cfg.ScanConcurrency = 1
 	}
+	if cfg.ScanInterval <= 0 {
+		return Config{}, fmt.Errorf("SCAN_INTERVAL must be greater than zero")
+	}
 	return cfg, nil
 }
 

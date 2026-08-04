@@ -90,6 +90,9 @@ func (a *App) Run(ctx context.Context) (runErr error) {
 	select {
 	case <-ctx.Done():
 		a.logger.Warn("application context canceled", "error", ctx.Err(), "cause", context.Cause(ctx))
+	case err := <-a.scheduler.Errors():
+		a.logger.Error("scheduler exited unexpectedly", "error", err)
+		runErr = err
 	case err, ok := <-errCh:
 		if ok && err != nil {
 			runErr = err

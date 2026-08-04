@@ -95,4 +95,30 @@ describe("DomainForm", () => {
       window.removeEventListener("unhandledrejection", onUnhandled);
     }
   });
+
+  it("disables submit while a save is pending", async () => {
+    const user = userEvent.setup();
+    let resolveSubmit: (() => void) | undefined;
+    const onSubmit = vi.fn(() => new Promise<void>((resolve) => {
+      resolveSubmit = resolve;
+    }));
+
+    render(
+      <I18nProvider>
+        <DomainForm submitLabel="Add domain" onSubmit={onSubmit} />
+      </I18nProvider>
+    );
+
+    await user.type(screen.getByLabelText(/hostname/i), "pending.example.com");
+    const submitButton = screen.getByRole("button", { name: /add domain/i });
+    await user.click(submitButton);
+
+    expect(submitButton).toBeDisabled();
+    expect(submitButton).toHaveAttribute("aria-busy", "true");
+    await user.click(submitButton);
+    expect(onSubmit).toHaveBeenCalledTimes(1);
+
+    resolveSubmit?.();
+    await waitFor(() => expect(submitButton).toBeEnabled());
+  });
 });

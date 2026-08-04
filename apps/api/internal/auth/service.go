@@ -161,11 +161,12 @@ func (s *Service) Register(ctx context.Context, input RegisterInput) (*models.Us
 		}
 
 		policy := models.NotificationPolicy{
-			TenantID:  tenant.ID,
-			ScopeType: models.NotificationPolicyScopeTenant,
-			DomainID:  0,
+			TenantID:    tenant.ID,
+			ScopeType:   models.NotificationPolicyScopeTenant,
+			DomainID:    0,
+			RepeatDaily: true,
 		}
-		if err := policy.SetThresholdDays([]int{30, 7, 1}); err != nil {
+		if err := policy.SetThresholdDays([]int{30}); err != nil {
 			return err
 		}
 		if err := policy.SetEndpointIDs([]uint{}); err != nil {

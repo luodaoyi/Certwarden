@@ -91,6 +91,20 @@ func runMigrations(db *gorm.DB) error {
 				return nil
 			},
 		},
+		{
+			ID: "202608040001_daily_default_notifications",
+			Migrate: func(tx *gorm.DB) error {
+				if err := tx.AutoMigrate(&models.NotificationPolicy{}); err != nil {
+					return err
+				}
+				return tx.Model(&models.NotificationPolicy{}).
+					Where("scope_type = ? AND domain_id = ? AND thresholds_json = ? AND repeat_daily = ?", models.NotificationPolicyScopeTenant, 0, "[1,7,30]", false).
+					Update("repeat_daily", true).Error
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return nil
+			},
+		},
 	})
 	return migration.Migrate()
 }

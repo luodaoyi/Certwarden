@@ -3,14 +3,19 @@ import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 
+import { ApiError } from "@/lib/api";
 import { I18nProvider } from "@/lib/i18n";
 import { DashboardPage } from "@/pages/dashboard-page";
 
 const apiRequestMock = vi.fn();
 
-vi.mock("@/lib/api", () => ({
-  apiRequest: (...args: unknown[]) => apiRequestMock(...args),
-}));
+vi.mock("@/lib/api", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/api")>();
+  return {
+    ...actual,
+    apiRequest: (...args: unknown[]) => apiRequestMock(...args),
+  };
+});
 
 vi.mock("@/lib/auth", () => ({
   useAuth: () => ({
@@ -456,7 +461,7 @@ describe("DashboardPage", () => {
     expect(screen.getByRole("status")).toHaveAttribute("data-tone", "success");
   });
 
-  it("shows failure toast feedback when adding a domain fails", async () => {
+  it("shows the localized duplicate-domain error when adding an existing domain", async () => {
     const user = userEvent.setup();
 
     apiRequestMock.mockImplementation((path: string, init?: RequestInit) => {
@@ -469,7 +474,7 @@ describe("DashboardPage", () => {
       }
 
       if (path === "/domains" && init?.method === "POST") {
-        return Promise.reject(new Error("create failed"));
+        return Promise.reject(new ApiError(409, "domain already exists"));
       }
 
       throw new Error(`Unexpected request: ${path}`);
@@ -482,7 +487,7 @@ describe("DashboardPage", () => {
     await user.click(screen.getByRole("button", { name: "Submit domain" }));
 
     await waitFor(() => {
-      expect(screen.getByRole("status")).toHaveTextContent("Unable to save domain.");
+      expect(screen.getByRole("status")).toHaveTextContent("This domain already exists.");
     });
     expect(screen.getByRole("status")).toHaveAttribute("data-tone", "error");
     // Failed save must keep the add form open (mutation onSuccess does not run).

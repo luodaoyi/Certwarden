@@ -42,6 +42,7 @@ func Open(cfg config.Config) (*gorm.DB, error) {
 	}
 
 	db, err := gorm.Open(dialector, &gorm.Config{
+		TranslateError: true,
 		NowFunc: func() time.Time {
 			return time.Now().UTC()
 		},
@@ -153,18 +154,19 @@ func EnsureBootstrap(ctx context.Context, db *gorm.DB, cfg config.Config, logger
 	}
 
 	policy := models.NotificationPolicy{
-		TenantID:  tenant.ID,
-		ScopeType: models.NotificationPolicyScopeTenant,
-		DomainID:  0,
+		TenantID:    tenant.ID,
+		ScopeType:   models.NotificationPolicyScopeTenant,
+		DomainID:    0,
+		RepeatDaily: true,
 	}
-	_ = policy.SetThresholdDays([]int{30, 7, 1})
+	_ = policy.SetThresholdDays([]int{30})
 	_ = policy.SetEndpointIDs([]uint{})
 
 	if err := db.WithContext(ctx).Where(models.NotificationPolicy{
 		TenantID:  tenant.ID,
 		ScopeType: models.NotificationPolicyScopeTenant,
 		DomainID:  0,
-	}).Assign(policy).FirstOrCreate(&policy).Error; err != nil {
+	}).Attrs(policy).FirstOrCreate(&policy).Error; err != nil {
 		return fmt.Errorf("bootstrap policy: %w", err)
 	}
 

@@ -85,6 +85,7 @@ export interface DomainCheckResult {
 export interface PolicyView {
   threshold_days: number[];
   endpoint_ids: number[];
+  repeat_daily: boolean;
 }
 
 export interface TenantPolicies {

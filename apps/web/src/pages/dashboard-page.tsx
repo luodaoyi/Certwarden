@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { apiRequest } from "@/lib/api";
+import { useApiErrorMessage } from "@/lib/api-error";
 import { useAuth } from "@/lib/auth";
 import { sortDomainsByCertExpiryAsc } from "@/lib/certificate-age";
 import { useI18n } from "@/lib/i18n";
@@ -89,6 +90,7 @@ function DashboardToast({
 export function DashboardPage() {
   const { user } = useAuth();
   const { t, formatDateTime } = useI18n();
+  const getApiErrorMessage = useApiErrorMessage();
   const queryClient = useQueryClient();
   const [editingDomain, setEditingDomain] = useState<ApiDomain | null>(null);
   const [expandedDomainId, setExpandedDomainId] = useState<number | null>(null);
@@ -220,7 +222,7 @@ export function DashboardPage() {
         "success"
       );
     } catch (error) {
-      showToast(t("dashboard.domainSaveError"), "error");
+      showToast(getApiErrorMessage(error, t("dashboard.domainSaveError")), "error");
       // Re-throw so DomainForm can keep field values and avoid treating failure as success.
       throw error;
     }

@@ -163,6 +163,7 @@ type NotificationPolicy struct {
 	DomainID        uint                    `gorm:"not null;default:0;uniqueIndex:idx_policy_scope"`
 	ThresholdsJSON  string                  `gorm:"type:text;not null"`
 	EndpointIDsJSON string                  `gorm:"type:text;not null"`
+	RepeatDaily     bool                    `gorm:"not null;default:false"`
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
 }

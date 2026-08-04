@@ -18,18 +18,21 @@ import (
 )
 
 type Service struct {
-	db          *gorm.DB
-	cfg         config.Config
-	checker     *sslcheck.Checker
-	notifier    *notify.Service
-	logger      *slog.Logger
-	jobs        chan uint
-	cancel      context.CancelFunc
-	startOnce   sync.Once
-	stopOnce    sync.Once
-	workerGroup sync.WaitGroup
-	loopGroup   sync.WaitGroup
-	now         func() time.Time
+	db           *gorm.DB
+	cfg          config.Config
+	checker      *sslcheck.Checker
+	notifier     *notify.Service
+	logger       *slog.Logger
+	jobs         chan uint
+	cancel       context.CancelFunc
+	startOnce    sync.Once
+	stopOnce     sync.Once
+	workerGroup  sync.WaitGroup
+	loopGroup    sync.WaitGroup
+	enqueueGroup sync.WaitGroup
+	errCh        chan error
+	failureOnce  sync.Once
+	now          func() time.Time
 }
 
 func NewService(db *gorm.DB, cfg config.Config, checker *sslcheck.Checker, notifier *notify.Service, logger *slog.Logger) *Service {
@@ -39,6 +42,7 @@ func NewService(db *gorm.DB, cfg config.Config, checker *sslcheck.Checker, notif
 		checker:  checker,
 		notifier: notifier,
 		logger:   logger,
+		errCh:    make(chan error, 1),
 		now: func() time.Time {
 			return time.Now().UTC()
 		},
@@ -57,8 +61,7 @@ func (s *Service) Start(ctx context.Context) {
 			go func() {
 				defer func() {
 					if recovered := recover(); recovered != nil {
-						crashlog.Log(s.logger, "scheduler worker panicked", recovered, "worker", workerIndex)
-						panic(recovered)
+						s.reportPanic("scheduler worker panicked", recovered, "worker", workerIndex)
 					}
 				}()
 				s.worker(runCtx, workerIndex)
@@ -69,13 +72,16 @@ func (s *Service) Start(ctx context.Context) {
 		go func() {
 			defer func() {
 				if recovered := recover(); recovered != nil {
-					crashlog.Log(s.logger, "scheduler loop panicked", recovered)
-					panic(recovered)
+					s.reportPanic("scheduler loop panicked", recovered)
 				}
 			}()
 			s.loop(runCtx)
 		}()
 	})
+}
+
+func (s *Service) Errors() <-chan error {
+	return s.errCh
 }
 
 func (s *Service) Stop() {
@@ -84,6 +90,7 @@ func (s *Service) Stop() {
 			s.cancel()
 		}
 		s.loopGroup.Wait()
+		s.enqueueGroup.Wait()
 		// Workers exit on ctx.Done(), so keep the channel open here.
 		// Closing it races with the async enqueue goroutine below and can
 		// trigger `panic: send on closed channel` during shutdown.
@@ -166,11 +173,12 @@ func (s *Service) dispatchDueDomains(ctx context.Context) error {
 			return ctx.Err()
 		case s.jobs <- domain.ID:
 		default:
+			s.enqueueGroup.Add(1)
 			go func(id uint) {
+				defer s.enqueueGroup.Done()
 				defer func() {
 					if recovered := recover(); recovered != nil {
-						crashlog.Log(s.logger, "scheduler enqueue goroutine panicked", recovered, "domain_id", id)
-						panic(recovered)
+						s.reportPanic("scheduler enqueue goroutine panicked", recovered, "domain_id", id)
 					}
 				}()
 
@@ -183,6 +191,16 @@ func (s *Service) dispatchDueDomains(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func (s *Service) reportPanic(message string, recovered any, attrs ...any) {
+	crashlog.Log(s.logger, message, recovered, attrs...)
+	s.failureOnce.Do(func() {
+		if s.cancel != nil {
+			s.cancel()
+		}
+		s.errCh <- fmt.Errorf("%s: %v", message, recovered)
+	})
 }
 
 func (s *Service) processDomain(ctx context.Context, domainID uint) (*models.Domain, error) {

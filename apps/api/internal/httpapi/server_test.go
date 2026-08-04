@@ -66,6 +66,33 @@ func TestSessionCookieAndPublicTenantStatus(t *testing.T) {
 		t.Fatalf("expected create domain 201, got %d (%s)", createDomainResp.Code, createDomainResp.Body.String())
 	}
 
+	duplicateDomainResp := performJSONRequest(t, router, http.MethodPost, "/api/domains", map[string]any{
+		"hostname":               "example.com",
+		"port":                   443,
+		"enabled":                true,
+		"check_interval_seconds": 86400,
+	}, loginPayload.Tokens.AccessToken)
+	if duplicateDomainResp.Code != http.StatusConflict {
+		t.Fatalf("expected duplicate domain 409, got %d (%s)", duplicateDomainResp.Code, duplicateDomainResp.Body.String())
+	}
+
+	policiesResp := performJSONRequest(t, router, http.MethodGet, "/api/notification-policies", nil, loginPayload.Tokens.AccessToken)
+	if policiesResp.Code != http.StatusOK {
+		t.Fatalf("expected notification policies 200, got %d (%s)", policiesResp.Code, policiesResp.Body.String())
+	}
+	var policiesPayload struct {
+		Default struct {
+			ThresholdDays []int `json:"threshold_days"`
+			RepeatDaily   bool  `json:"repeat_daily"`
+		} `json:"default"`
+	}
+	if err := json.Unmarshal(policiesResp.Body.Bytes(), &policiesPayload); err != nil {
+		t.Fatalf("decode notification policies: %v", err)
+	}
+	if !policiesPayload.Default.RepeatDaily || len(policiesPayload.Default.ThresholdDays) != 1 || policiesPayload.Default.ThresholdDays[0] != 30 {
+		t.Fatalf("expected default policy to notify daily within 30 days, got %+v", policiesPayload.Default)
+	}
+
 	updateProfileResp := performJSONRequest(t, router, http.MethodPut, "/api/auth/me", map[string]any{
 		"username":               "owner",
 		"email":                  "owner@example.com",

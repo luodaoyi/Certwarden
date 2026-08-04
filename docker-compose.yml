@@ -3,6 +3,7 @@ name: certwarden
 services:
   app:
     image: ${CERTWARDEN_IMAGE:-ghcr.io/luodaoyi/certwarden:latest}
+    restart: unless-stopped
     dns_opt:
       - timeout:5
       - attempts:2

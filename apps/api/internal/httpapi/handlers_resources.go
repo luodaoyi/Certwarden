@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"context"
+	"errors"
 	"net"
 	"net/http"
 	"strings"
@@ -326,7 +327,7 @@ func (s *Server) handleUpsertDomain(w http.ResponseWriter, r *http.Request, tena
 
 	if domainID == 0 {
 		if err := s.db.WithContext(r.Context()).Create(&domain).Error; err != nil {
-			if strings.Contains(strings.ToLower(err.Error()), "unique") {
+			if errors.Is(err, gorm.ErrDuplicatedKey) {
 				writeError(w, http.StatusConflict, "domain already exists")
 				return
 			}
@@ -454,6 +455,7 @@ func (s *Server) handlePolicyUpsert(w http.ResponseWriter, r *http.Request, tena
 		"policy": notify.PolicyView{
 			ThresholdDays: thresholds,
 			EndpointIDs:   endpointIDs,
+			RepeatDaily:   policy.RepeatDaily,
 		},
 	})
 }

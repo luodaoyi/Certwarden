@@ -32,6 +32,7 @@ const (
 type PolicyView struct {
 	ThresholdDays []int  `json:"threshold_days"`
 	EndpointIDs   []uint `json:"endpoint_ids"`
+	RepeatDaily   bool   `json:"repeat_daily"`
 }
 
 type TenantPolicies struct {
@@ -62,6 +63,7 @@ type payload struct {
 type event struct {
 	Type          string
 	ThresholdDays int
+	DedupBucket   string
 }
 
 func NewService(db *gorm.DB, cfg config.Config, sender mailer.Sender, logger *slog.Logger) *Service {
@@ -87,7 +89,7 @@ func (s *Service) GetPolicies(ctx context.Context, tenantID uint) (*TenantPolici
 	}
 
 	response := &TenantPolicies{
-		Default:   PolicyView{ThresholdDays: []int{30, 7, 1}, EndpointIDs: []uint{}},
+		Default:   PolicyView{ThresholdDays: []int{30}, EndpointIDs: []uint{}, RepeatDaily: true},
 		Overrides: map[uint]PolicyView{},
 	}
 
@@ -100,7 +102,7 @@ func (s *Service) GetPolicies(ctx context.Context, tenantID uint) (*TenantPolici
 		if err != nil {
 			return nil, err
 		}
-		view := PolicyView{ThresholdDays: thresholds, EndpointIDs: endpointIDs}
+		view := PolicyView{ThresholdDays: thresholds, EndpointIDs: endpointIDs, RepeatDaily: policy.RepeatDaily}
 		if policy.ScopeType == models.NotificationPolicyScopeTenant {
 			response.Default = view
 			continue
@@ -119,6 +121,18 @@ func (s *Service) UpsertPolicy(ctx context.Context, tenantID, domainID uint, thr
 
 	thresholdDays = normalizeThresholds(thresholdDays)
 	endpointIDs = normalizeEndpointIDs(endpointIDs)
+	repeatDaily := false
+	if domainID == 0 {
+		var existing models.NotificationPolicy
+		result := s.db.WithContext(ctx).
+			Where("tenant_id = ? AND scope_type = ? AND domain_id = ?", tenantID, scope, domainID).
+			Limit(1).
+			Find(&existing)
+		if result.Error != nil {
+			return nil, result.Error
+		}
+		repeatDaily = result.RowsAffected == 0 || existing.RepeatDaily
+	}
 
 	if domainID > 0 && len(thresholdDays) == 0 && len(endpointIDs) == 0 {
 		if err := s.db.WithContext(ctx).Where("tenant_id = ? AND scope_type = ? AND domain_id = ?", tenantID, scope, domainID).Delete(&models.NotificationPolicy{}).Error; err != nil {
@@ -128,9 +142,10 @@ func (s *Service) UpsertPolicy(ctx context.Context, tenantID, domainID uint, thr
 	}
 
 	policy := models.NotificationPolicy{
-		TenantID:  tenantID,
-		ScopeType: scope,
-		DomainID:  domainID,
+		TenantID:    tenantID,
+		ScopeType:   scope,
+		DomainID:    domainID,
+		RepeatDaily: repeatDaily,
 	}
 	if err := policy.SetThresholdDays(thresholdDays); err != nil {
 		return nil, err
@@ -161,7 +176,7 @@ func (s *Service) MaybeNotify(ctx context.Context, domain models.Domain, previou
 		return nil
 	}
 
-	events := computeEvents(previousStatus, previousDays, domain, policy.ThresholdDays)
+	events := computeEvents(previousStatus, previousDays, domain, policy, s.now())
 	if len(events) == 0 {
 		return nil
 	}
@@ -281,7 +296,7 @@ func (s *Service) resolvePolicy(ctx context.Context, tenantID, domainID uint) (P
 	return policy, endpoints, nil
 }
 
-func computeEvents(previousStatus models.DomainStatus, previousDays *int, domain models.Domain, thresholds []int) []event {
+func computeEvents(previousStatus models.DomainStatus, previousDays *int, domain models.Domain, policy PolicyView, now time.Time) []event {
 	if domain.DaysRemaining == nil {
 		return nil
 	}
@@ -289,8 +304,22 @@ func computeEvents(previousStatus models.DomainStatus, previousDays *int, domain
 	events := []event{}
 	current := *domain.DaysRemaining
 
-	for _, threshold := range computeThresholdCrossings(previousDays, current, thresholds) {
-		events = append(events, event{Type: EventThreshold, ThresholdDays: threshold})
+	thresholds := normalizeThresholds(policy.ThresholdDays)
+	if policy.RepeatDaily {
+		if len(thresholds) > 0 {
+			threshold := thresholds[len(thresholds)-1]
+			if current >= 0 && current <= threshold {
+				events = append(events, event{
+					Type:          EventThreshold,
+					ThresholdDays: threshold,
+					DedupBucket:   now.UTC().Format(time.DateOnly),
+				})
+			}
+		}
+	} else {
+		for _, threshold := range computeThresholdCrossings(previousDays, current, thresholds) {
+			events = append(events, event{Type: EventThreshold, ThresholdDays: threshold})
+		}
 	}
 
 	if (previousDays == nil || *previousDays >= 0) && current < 0 {
@@ -331,10 +360,12 @@ func computeThresholdCrossings(previousDays *int, current int, thresholds []int)
 func (s *Service) deliverEvent(ctx context.Context, domain models.Domain, endpoint models.NotificationEndpoint, evt event) error {
 	dedupKey := buildDedupKey(domain, endpoint, evt)
 	var existing models.NotificationDelivery
-	if err := s.db.WithContext(ctx).Where("dedup_key = ?", dedupKey).First(&existing).Error; err == nil {
+	result := s.db.WithContext(ctx).Where("dedup_key = ?", dedupKey).Limit(1).Find(&existing)
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected > 0 {
 		return nil
-	} else if err != gorm.ErrRecordNotFound {
-		return err
 	}
 
 	payloadBody := payload{
@@ -652,7 +683,11 @@ func buildDedupKey(domain models.Domain, endpoint models.NotificationEndpoint, e
 	if domain.CertExpiresAt != nil {
 		expiresAt = domain.CertExpiresAt.UTC().Format(time.RFC3339)
 	}
-	return fmt.Sprintf("%d:%d:%s:%d:%s", domain.ID, endpoint.ID, evt.Type, evt.ThresholdDays, expiresAt)
+	key := fmt.Sprintf("%d:%d:%s:%d:%s", domain.ID, endpoint.ID, evt.Type, evt.ThresholdDays, expiresAt)
+	if evt.DedupBucket != "" {
+		key += ":" + evt.DedupBucket
+	}
+	return key
 }
 
 func maskEmail(email string) string {

@@ -180,7 +180,9 @@ export function DomainForm({
         {t("common.enabled")}
       </label>
       <div className="action-row md:col-span-2">
-        <Button type="submit">{submitLabel}</Button>
+        <Button type="submit" disabled={form.formState.isSubmitting} aria-busy={form.formState.isSubmitting}>
+          {submitLabel}
+        </Button>
         {onCancel ? (
           <Button type="button" variant="outline" onClick={onCancel}>
             {t("common.cancel")}

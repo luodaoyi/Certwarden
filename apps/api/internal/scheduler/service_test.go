@@ -4,9 +4,11 @@ import (
 	"context"
 	"io"
 	"log/slog"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/luodaoyi/Certwarden/apps/api/internal/config"
 	"github.com/luodaoyi/Certwarden/apps/api/internal/models"
 )
 
@@ -43,4 +45,26 @@ func TestStopLeavesJobsChannelOpen(t *testing.T) {
 	}()
 
 	service.jobs <- 1
+}
+
+func TestSchedulerPanicIsReportedWithoutCrashingProcess(t *testing.T) {
+	service := NewService(
+		nil,
+		config.Config{ScanConcurrency: 1, ScanInterval: time.Hour},
+		nil,
+		nil,
+		slog.New(slog.NewTextHandler(io.Discard, nil)),
+	)
+	service.Start(context.Background())
+
+	select {
+	case err := <-service.Errors():
+		if err == nil || !strings.Contains(err.Error(), "scheduler loop panicked") {
+			t.Fatalf("expected scheduler panic error, got %v", err)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("timed out waiting for scheduler panic error")
+	}
+
+	service.Stop()
 }
