@@ -54,7 +54,7 @@ func Load() (Config, error) {
 		AccessTokenTTL:         getDuration("ACCESS_TOKEN_TTL", 15*time.Minute),
 		RefreshTokenTTL:        getDuration("REFRESH_TOKEN_TTL", 30*24*time.Hour),
 		ScanConcurrency:        getInt("SCAN_CONCURRENCY", 5),
-		ScanInterval:           getDuration("SCAN_INTERVAL", time.Hour),
+		ScanInterval:           getDuration("SCAN_INTERVAL", 2*time.Hour),
 		ScanTimeout:            getDuration("SCAN_TIMEOUT", 10*time.Second),
 		WebhookTimeout:         getDuration("WEBHOOK_TIMEOUT", 5*time.Second),
 		TelegramBotToken:       getString("TELEGRAM_BOT_TOKEN", ""),

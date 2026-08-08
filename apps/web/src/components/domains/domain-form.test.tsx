@@ -44,6 +44,24 @@ describe("DomainForm", () => {
     }));
   });
 
+  it("defaults new domains to a two-hour check cadence", async () => {
+    const user = userEvent.setup();
+    const onSubmit = vi.fn().mockResolvedValue(undefined);
+
+    render(
+      <I18nProvider>
+        <DomainForm submitLabel="Add domain" onSubmit={onSubmit} />
+      </I18nProvider>
+    );
+
+    await user.type(screen.getByLabelText(/hostname/i), "example.com");
+    await user.click(screen.getByRole("button", { name: /add domain/i }));
+
+    expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({
+      check_interval_seconds: 7200,
+    }));
+  });
+
   it("resets fields after a successful add", async () => {
     const user = userEvent.setup();
     const onSubmit = vi.fn().mockResolvedValue(undefined);

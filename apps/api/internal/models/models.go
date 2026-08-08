@@ -119,7 +119,8 @@ type Domain struct {
 	CertSignatureAlgorithm string    `gorm:"size:128"`
 	LastError              string    `gorm:"type:text"`
 	NextCheckAt            time.Time `gorm:"not null;index"`
-	CheckIntervalSeconds   int       `gorm:"not null;default:3600"`
+	CheckIntervalSeconds   int       `gorm:"not null;default:7200"`
+	ConsecutiveFailures    int       `gorm:"not null;default:0"`
 	CreatedAt              time.Time
 	UpdatedAt              time.Time
 }

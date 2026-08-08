@@ -17,8 +17,8 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/luodaoyi/Certwarden/releases/tag/v1.2.0"><img src="https://img.shields.io/github/v/release/luodaoyi/Certwarden?display_name=tag&style=flat-square" alt="Latest release" /></a>
-  <a href="https://github.com/luodaoyi/Certwarden/releases/tag/v1.2.0"><img src="https://img.shields.io/github/release-date/luodaoyi/Certwarden?style=flat-square" alt="Release date" /></a>
+  <a href="https://github.com/luodaoyi/Certwarden/releases/tag/v1.2.1"><img src="https://img.shields.io/github/v/release/luodaoyi/Certwarden?display_name=tag&style=flat-square" alt="Latest release" /></a>
+  <a href="https://github.com/luodaoyi/Certwarden/releases/tag/v1.2.1"><img src="https://img.shields.io/github/release-date/luodaoyi/Certwarden?style=flat-square" alt="Release date" /></a>
   <a href="https://github.com/luodaoyi/Certwarden/actions/workflows/ci.yml"><img src="https://github.com/luodaoyi/Certwarden/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
   <a href="https://github.com/luodaoyi/Certwarden/actions/workflows/docker.yml"><img src="https://github.com/luodaoyi/Certwarden/actions/workflows/docker.yml/badge.svg" alt="Docker" /></a>
   <a href="https://github.com/luodaoyi/Certwarden/pkgs/container/certwarden"><img src="https://img.shields.io/badge/container-ghcr.io%2Fluodaoyi%2Fcertwarden-2496ED?style=flat-square&logo=docker&logoColor=white" alt="GHCR image" /></a>
@@ -33,7 +33,7 @@
 
 <p align="center">
   <a href="#快速开始"><strong>快速开始</strong></a> ·
-  <a href="https://github.com/luodaoyi/Certwarden/releases/tag/v1.2.0"><strong>版本发布</strong></a> ·
+  <a href="https://github.com/luodaoyi/Certwarden/releases/tag/v1.2.1"><strong>版本发布</strong></a> ·
   <a href="https://github.com/luodaoyi/Certwarden/pkgs/container/certwarden"><strong>容器镜像</strong></a> ·
   <a href="./README.md"><strong>English README</strong></a>
 </p>
@@ -115,7 +115,7 @@ Certwarden 是一个自托管的 SSL/TLS 证书监控平台，面向多租户运
 
 - [English README](./README.md)
 - [简体中文 README](./README-CN.md)
-- [v1.2.0 版本说明](https://github.com/luodaoyi/Certwarden/releases/tag/v1.2.0)
+- [v1.2.1 版本说明](https://github.com/luodaoyi/Certwarden/releases/tag/v1.2.1)
 - [GHCR 容器镜像](https://github.com/luodaoyi/Certwarden/pkgs/container/certwarden)
 
 ## 系统架构
@@ -164,7 +164,7 @@ docker compose up -d
 如果你希望固定版本镜像：
 
 ```bash
-CERTWARDEN_IMAGE=ghcr.io/luodaoyi/certwarden:v1.2.0
+CERTWARDEN_IMAGE=ghcr.io/luodaoyi/certwarden:v1.2.1
 ```
 
 默认对外端口：
@@ -226,7 +226,7 @@ npm run dev
 | `BOOTSTRAP_ADMIN_EMAIL` | 初始管理员联系邮箱 | 空 |
 | `BOOTSTRAP_ADMIN_PASSWORD` | 初始管理员密码 | `admin` |
 | `SCAN_CONCURRENCY` | 检测协程池大小 | `5` |
-| `SCAN_INTERVAL` | 调度器扫描周期 | `1h` |
+| `SCAN_INTERVAL` | 证书检测成功后的默认复检周期 | `2h` |
 | `SMTP_*` | SMTP 配置 | 空 |
 | `TELEGRAM_BOT_TOKEN` | 可选全局 Telegram Token | 空 |
 | `WEBHOOK_TIMEOUT` | Webhook 超时 | `5s` |

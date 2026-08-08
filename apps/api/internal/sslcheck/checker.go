@@ -31,17 +31,23 @@ type Result struct {
 	CertFingerprintSHA256  string
 	CertSignatureAlgorithm string
 	Error                  string
+	Retryable              bool
 }
 
 type Checker struct {
-	Timeout   time.Duration
-	TLSConfig *tls.Config
-	Now       func() time.Time
+	Timeout        time.Duration
+	Attempts       int
+	RetryBaseDelay time.Duration
+	TLSConfig      *tls.Config
+	DialContext    func(context.Context, string, string) (net.Conn, error)
+	Now            func() time.Time
 }
 
 func New(timeout time.Duration) *Checker {
 	return &Checker{
-		Timeout: timeout,
+		Timeout:        timeout,
+		Attempts:       3,
+		RetryBaseDelay: 500 * time.Millisecond,
 		Now: func() time.Time {
 			return time.Now().UTC()
 		},
@@ -49,21 +55,64 @@ func New(timeout time.Duration) *Checker {
 }
 
 func (c *Checker) Check(ctx context.Context, hostname string, port int, targetIP string) Result {
-	now := c.Now()
-
-	resolvedIP, err := resolveAddress(ctx, hostname, targetIP)
-	if err != nil {
+	trimmedTarget := strings.TrimSpace(targetIP)
+	if trimmedTarget != "" && net.ParseIP(trimmedTarget) == nil {
 		return Result{
-			Status:     models.DomainStatusError,
-			CheckedAt:  now,
-			ResolvedIP: resolvedIP,
-			Error:      err.Error(),
+			Status:    models.DomainStatusError,
+			CheckedAt: c.Now(),
+			Error:     "target ip must be a valid IPv4 or IPv6 address",
 		}
 	}
 
+	attempts := c.Attempts
+	if attempts < 1 {
+		attempts = 1
+	}
+
+	errors := make([]string, 0, attempts)
+	var lastResult Result
+	for attempt := 0; attempt < attempts; attempt++ {
+		if attempt > 0 {
+			if err := waitForRetry(ctx, c.retryDelay(attempt)); err != nil {
+				lastResult.Error = fmt.Sprintf("%s; retry canceled: %v", lastResult.Error, err)
+				return lastResult
+			}
+		}
+
+		result := c.checkOnce(ctx, hostname, port, targetIP, attempt)
+		if result.Status == models.DomainStatusHealthy || !result.Retryable {
+			return result
+		}
+
+		lastResult = result
+		errors = append(errors, fmt.Sprintf("attempt %d: %s", attempt+1, result.Error))
+	}
+
+	lastResult.Error = fmt.Sprintf("all %d attempts failed: %s", attempts, strings.Join(errors, "; "))
+	return lastResult
+}
+
+func (c *Checker) checkOnce(ctx context.Context, hostname string, port int, targetIP string, attempt int) Result {
+	now := c.Now()
+	attemptCtx, cancel := context.WithCancel(ctx)
+	if c.Timeout > 0 {
+		attemptCtx, cancel = context.WithTimeout(ctx, c.Timeout)
+	}
+	defer cancel()
+
+	resolvedIPs, err := resolveAddresses(attemptCtx, hostname, targetIP)
+	if err != nil {
+		return Result{
+			Status:    models.DomainStatusError,
+			CheckedAt: now,
+			Error:     err.Error(),
+			Retryable: true,
+		}
+	}
+	resolvedIP := resolvedIPs[attempt%len(resolvedIPs)]
+
 	addr := net.JoinHostPort(resolvedIP, strconv.Itoa(port))
 
-	dialer := &net.Dialer{Timeout: c.Timeout}
 	tlsConfig := &tls.Config{
 		ServerName: hostname,
 		MinVersion: tls.VersionTLS12,
@@ -81,24 +130,31 @@ func (c *Checker) Check(ctx context.Context, hostname string, port int, targetIP
 	// Finish the handshake so expired or otherwise invalid certificates can still be inspected.
 	tlsConfig.InsecureSkipVerify = true
 
-	rawConn, err := dialer.DialContext(ctx, "tcp", addr)
+	dialContext := c.DialContext
+	if dialContext == nil {
+		dialer := &net.Dialer{}
+		dialContext = dialer.DialContext
+	}
+	rawConn, err := dialContext(attemptCtx, "tcp", addr)
 	if err != nil {
 		return Result{
 			Status:     models.DomainStatusError,
 			CheckedAt:  now,
 			ResolvedIP: resolvedIP,
 			Error:      err.Error(),
+			Retryable:  true,
 		}
 	}
 	conn := tls.Client(rawConn, tlsConfig)
 	defer conn.Close()
 
-	if err := conn.HandshakeContext(ctx); err != nil {
+	if err := conn.HandshakeContext(attemptCtx); err != nil {
 		return Result{
 			Status:     models.DomainStatusError,
 			CheckedAt:  now,
 			ResolvedIP: resolvedIP,
 			Error:      err.Error(),
+			Retryable:  true,
 		}
 	}
 
@@ -109,6 +165,7 @@ func (c *Checker) Check(ctx context.Context, hostname string, port int, targetIP
 			CheckedAt:  now,
 			ResolvedIP: resolvedIP,
 			Error:      "no peer certificates received",
+			Retryable:  true,
 		}
 	}
 
@@ -152,6 +209,28 @@ func (c *Checker) Check(ctx context.Context, hostname string, port int, targetIP
 	return result
 }
 
+func (c *Checker) retryDelay(retry int) time.Duration {
+	if c.RetryBaseDelay <= 0 || retry <= 0 {
+		return 0
+	}
+	return c.RetryBaseDelay * time.Duration(1<<(retry-1))
+}
+
+func waitForRetry(ctx context.Context, delay time.Duration) error {
+	if delay <= 0 {
+		return ctx.Err()
+	}
+
+	timer := time.NewTimer(delay)
+	defer timer.Stop()
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-timer.C:
+		return nil
+	}
+}
+
 func (r Result) MustHealthy() error {
 	if r.Status == models.DomainStatusHealthy {
 		return nil
@@ -159,33 +238,57 @@ func (r Result) MustHealthy() error {
 	return fmt.Errorf("%s", r.Error)
 }
 
-func resolveAddress(ctx context.Context, hostname string, targetIP string) (string, error) {
+func resolveAddresses(ctx context.Context, hostname string, targetIP string) ([]string, error) {
 	trimmedTarget := strings.TrimSpace(targetIP)
 	if trimmedTarget != "" {
 		parsed := net.ParseIP(trimmedTarget)
 		if parsed == nil {
-			return "", fmt.Errorf("target ip must be a valid IPv4 or IPv6 address")
+			return nil, fmt.Errorf("target ip must be a valid IPv4 or IPv6 address")
 		}
-		return parsed.String(), nil
+		return []string{parsed.String()}, nil
 	}
 
 	if parsed := net.ParseIP(strings.TrimSpace(hostname)); parsed != nil {
-		return parsed.String(), nil
+		return []string{parsed.String()}, nil
 	}
 
 	records, err := net.DefaultResolver.LookupIPAddr(ctx, hostname)
 	if err != nil {
-		return "", fmt.Errorf("resolve hostname: %w", err)
+		return nil, fmt.Errorf("resolve hostname: %w", err)
 	}
 	if len(records) == 0 {
-		return "", fmt.Errorf("no ip address resolved for hostname")
+		return nil, fmt.Errorf("no ip address resolved for hostname")
 	}
 
+	addresses := make([]string, 0, len(records))
+	seen := make(map[string]struct{}, len(records))
 	for _, record := range records {
 		if ipv4 := record.IP.To4(); ipv4 != nil {
-			return ipv4.String(), nil
+			address := ipv4.String()
+			if _, exists := seen[address]; !exists {
+				seen[address] = struct{}{}
+				addresses = append(addresses, address)
+			}
+		}
+	}
+	for _, record := range records {
+		if record.IP.To4() != nil {
+			continue
+		}
+		address := record.IP.String()
+		if _, exists := seen[address]; !exists {
+			seen[address] = struct{}{}
+			addresses = append(addresses, address)
 		}
 	}
 
-	return records[0].IP.String(), nil
+	return addresses, nil
+}
+
+func resolveAddress(ctx context.Context, hostname string, targetIP string) (string, error) {
+	addresses, err := resolveAddresses(ctx, hostname, targetIP)
+	if err != nil {
+		return "", err
+	}
+	return addresses[0], nil
 }

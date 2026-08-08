@@ -17,22 +17,27 @@ import (
 	"gorm.io/gorm"
 )
 
+const (
+	maxDispatchInterval = time.Minute
+	retryBaseInterval   = time.Minute
+	retryMaxInterval    = time.Hour
+)
+
 type Service struct {
-	db           *gorm.DB
-	cfg          config.Config
-	checker      *sslcheck.Checker
-	notifier     *notify.Service
-	logger       *slog.Logger
-	jobs         chan uint
-	cancel       context.CancelFunc
-	startOnce    sync.Once
-	stopOnce     sync.Once
-	workerGroup  sync.WaitGroup
-	loopGroup    sync.WaitGroup
-	enqueueGroup sync.WaitGroup
-	errCh        chan error
-	failureOnce  sync.Once
-	now          func() time.Time
+	db          *gorm.DB
+	cfg         config.Config
+	checker     *sslcheck.Checker
+	notifier    *notify.Service
+	logger      *slog.Logger
+	jobs        chan uint
+	cancel      context.CancelFunc
+	startOnce   sync.Once
+	stopOnce    sync.Once
+	workerGroup sync.WaitGroup
+	loopGroup   sync.WaitGroup
+	errCh       chan error
+	failureOnce sync.Once
+	now         func() time.Time
 }
 
 func NewService(db *gorm.DB, cfg config.Config, checker *sslcheck.Checker, notifier *notify.Service, logger *slog.Logger) *Service {
@@ -90,10 +95,7 @@ func (s *Service) Stop() {
 			s.cancel()
 		}
 		s.loopGroup.Wait()
-		s.enqueueGroup.Wait()
-		// Workers exit on ctx.Done(), so keep the channel open here.
-		// Closing it races with the async enqueue goroutine below and can
-		// trigger `panic: send on closed channel` during shutdown.
+		// Workers exit on ctx.Done(), so the jobs channel does not need to be closed.
 		s.workerGroup.Wait()
 	})
 }
@@ -105,7 +107,7 @@ func (s *Service) CheckDomainNow(ctx context.Context, domainID uint) (*models.Do
 func (s *Service) loop(ctx context.Context) {
 	defer s.loopGroup.Done()
 
-	ticker := time.NewTicker(s.cfg.ScanInterval)
+	ticker := time.NewTicker(dispatchInterval(s.cfg.ScanInterval))
 	defer ticker.Stop()
 
 	if err := s.dispatchDueDomains(ctx); err != nil {
@@ -157,7 +159,7 @@ func (s *Service) dispatchDueDomains(ctx context.Context) error {
 	}
 
 	for _, domain := range domains {
-		claimedUntil := now.Add(time.Duration(domain.CheckIntervalSeconds) * time.Second)
+		claimedUntil := now.Add(resolveInterval(domain, s.cfg.ScanInterval))
 		result := s.db.WithContext(ctx).Model(&models.Domain{}).
 			Where("id = ? AND next_check_at <= ?", domain.ID, now).
 			Update("next_check_at", claimedUntil)
@@ -172,21 +174,6 @@ func (s *Service) dispatchDueDomains(ctx context.Context) error {
 		case <-ctx.Done():
 			return ctx.Err()
 		case s.jobs <- domain.ID:
-		default:
-			s.enqueueGroup.Add(1)
-			go func(id uint) {
-				defer s.enqueueGroup.Done()
-				defer func() {
-					if recovered := recover(); recovered != nil {
-						s.reportPanic("scheduler enqueue goroutine panicked", recovered, "domain_id", id)
-					}
-				}()
-
-				select {
-				case <-ctx.Done():
-				case s.jobs <- id:
-				}
-			}(domain.ID)
 		}
 	}
 
@@ -225,7 +212,8 @@ func (s *Service) processDomain(ctx context.Context, domainID uint) (*models.Dom
 	previousDays := cloneIntPtr(domain.DaysRemaining)
 
 	result := s.checker.Check(ctx, domain.Hostname, domain.Port, domain.TargetIP)
-	nextCheckAt := s.now().Add(resolveInterval(domain, s.cfg.ScanInterval))
+	completedAt := s.now()
+	nextCheckAt, consecutiveFailures := scheduleNextCheck(domain, result, completedAt, s.cfg.ScanInterval)
 
 	if err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		checkResult := models.DomainCheckResult{
@@ -253,10 +241,11 @@ func (s *Service) processDomain(ctx context.Context, domainID uint) (*models.Dom
 		}
 
 		updates := map[string]any{
-			"status":          result.Status,
-			"last_checked_at": result.CheckedAt,
-			"next_check_at":   nextCheckAt,
-			"updated_at":      s.now(),
+			"status":               result.Status,
+			"last_checked_at":      result.CheckedAt,
+			"next_check_at":        nextCheckAt,
+			"consecutive_failures": consecutiveFailures,
+			"updated_at":           s.now(),
 		}
 		if result.ResolvedIP != "" {
 			updates["resolved_ip"] = result.ResolvedIP
@@ -302,6 +291,36 @@ func resolveInterval(domain models.Domain, fallback time.Duration) time.Duration
 		return time.Duration(domain.CheckIntervalSeconds) * time.Second
 	}
 	return fallback
+}
+
+func dispatchInterval(scanInterval time.Duration) time.Duration {
+	if scanInterval <= 0 || scanInterval > maxDispatchInterval {
+		return maxDispatchInterval
+	}
+	return scanInterval
+}
+
+func retryInterval(consecutiveFailures int) time.Duration {
+	if consecutiveFailures <= 1 {
+		return retryBaseInterval
+	}
+
+	delay := retryBaseInterval
+	for failure := 1; failure < consecutiveFailures && delay < retryMaxInterval; failure++ {
+		delay *= 2
+		if delay >= retryMaxInterval {
+			return retryMaxInterval
+		}
+	}
+	return delay
+}
+
+func scheduleNextCheck(domain models.Domain, result sslcheck.Result, completedAt time.Time, fallback time.Duration) (time.Time, int) {
+	if result.Status != models.DomainStatusHealthy && result.Retryable {
+		consecutiveFailures := domain.ConsecutiveFailures + 1
+		return completedAt.Add(retryInterval(consecutiveFailures)), consecutiveFailures
+	}
+	return completedAt.Add(resolveInterval(domain, fallback)), 0
 }
 
 func cloneIntPtr(value *int) *int {

@@ -82,9 +82,12 @@ export function DomainPanel({
   const targetIP = domain.target_ip || t("domains.autoResolve");
   const resolvedIP = domain.resolved_ip || t("common.none");
   const intervalDays = Math.round(domain.check_interval_seconds / 86400);
+  const intervalHours = Math.round(domain.check_interval_seconds / 3600);
   const intervalLabel = domain.check_interval_seconds % 86400 === 0
     ? t("domains.intervalPresetDays", { days: intervalDays })
-    : `${domain.check_interval_seconds}s`;
+    : domain.check_interval_seconds % 3600 === 0
+      ? t("domains.intervalPresetHours", { hours: intervalHours })
+      : `${domain.check_interval_seconds}s`;
 
   const derivedDays = deriveDaysFromCertExpiry(domain.cert_expires_at);
   const isOverdue = derivedDays !== null && derivedDays < 0;

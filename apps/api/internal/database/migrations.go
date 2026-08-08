@@ -1,9 +1,11 @@
 package database
 
 import (
-	"github.com/luodaoyi/Certwarden/apps/api/internal/models"
 	"strconv"
 	"strings"
+	"time"
+
+	"github.com/luodaoyi/Certwarden/apps/api/internal/models"
 
 	"github.com/go-gormigrate/gormigrate/v2"
 	"gorm.io/gorm"
@@ -100,6 +102,25 @@ func runMigrations(db *gorm.DB) error {
 				return tx.Model(&models.NotificationPolicy{}).
 					Where("scope_type = ? AND domain_id = ? AND thresholds_json = ? AND repeat_daily = ?", models.NotificationPolicyScopeTenant, 0, "[1,7,30]", false).
 					Update("repeat_daily", true).Error
+			},
+			Rollback: func(tx *gorm.DB) error {
+				return nil
+			},
+		},
+		{
+			ID: "202608080001_ssl_check_retry_and_two_hour_default",
+			Migrate: func(tx *gorm.DB) error {
+				if err := tx.AutoMigrate(&models.Domain{}); err != nil {
+					return err
+				}
+				// 86400 was the old UI default. Re-check those domains immediately
+				// and move them to the new two-hour default cadence.
+				return tx.Model(&models.Domain{}).
+					Where("check_interval_seconds = ?", 24*60*60).
+					Updates(map[string]any{
+						"check_interval_seconds": 2 * 60 * 60,
+						"next_check_at":          time.Now().UTC(),
+					}).Error
 			},
 			Rollback: func(tx *gorm.DB) error {
 				return nil

@@ -11,13 +11,13 @@ import type { ApiDomain } from "@/lib/types";
 
 type Translator = ReturnType<typeof useI18n>["t"];
 
-const intervalPresetOptions = [86400, 259200, 604800, 1209600, 2592000] as const;
+const intervalPresetOptions = [7200, 86400, 259200, 604800, 1209600, 2592000] as const;
 const intervalPresetValues = [...intervalPresetOptions.map(String), "custom"] as const;
 type IntervalPresetValue = (typeof intervalPresetValues)[number];
 
 function presetForInterval(seconds?: number): { interval_preset: IntervalPresetValue; custom_interval_seconds: string } {
   if (!seconds) {
-    return { interval_preset: "86400", custom_interval_seconds: "" };
+    return { interval_preset: "7200", custom_interval_seconds: "" };
   }
 
   const preset = intervalPresetOptions.find((value) => value === seconds);
@@ -151,7 +151,9 @@ export function DomainForm({
         >
           {intervalPresetOptions.map((seconds) => (
             <option key={seconds} value={seconds}>
-              {t("domains.intervalPresetDays", { days: Math.round(seconds / 86400) })}
+              {seconds === 7200
+                ? t("domains.intervalPresetHours", { hours: 2 })
+                : t("domains.intervalPresetDays", { days: Math.round(seconds / 86400) })}
             </option>
           ))}
           <option value="custom">{t("domains.intervalCustomOption")}</option>
