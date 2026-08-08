@@ -163,6 +163,22 @@ describe("DashboardPage", () => {
     expect(overview.compareDocumentPosition(table) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
+  it("keeps the hostname selectable outside the expand button", async () => {
+    const user = userEvent.setup();
+    mockDomainsPayload([baseDomain()]);
+
+    renderDashboard();
+
+    const hostname = await screen.findByText("example.com");
+    expect(hostname).toHaveClass("select-text");
+    expect(hostname.closest("button")).toBeNull();
+
+    const expandButton = screen.getByRole("button", { name: "example.com" });
+    expect(expandButton).toHaveAttribute("aria-expanded", "false");
+    await user.click(expandButton);
+    expect(expandButton).toHaveAttribute("aria-expanded", "true");
+  });
+
   it("shows a visible pending state while checking a domain immediately", async () => {
     const user = userEvent.setup();
     let finishStream: (() => void) | undefined;
@@ -330,8 +346,8 @@ describe("DashboardPage", () => {
 
     const table = screen.getByTestId("certificate-table");
     const hostnames = Array.from(table.querySelectorAll("article")).map((article) => {
-      const label = article.querySelector("button span.min-w-0 span.block");
-      return label?.childNodes[0]?.textContent ?? "";
+      const label = article.querySelector("span.select-text");
+      return label?.textContent ?? "";
     });
 
     expect(hostnames).toEqual([

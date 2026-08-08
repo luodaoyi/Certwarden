@@ -120,8 +120,8 @@ describe("TenantStatusPage", () => {
     expect(screen.getByRole("heading", { name: "Certificate monitors" })).toBeInTheDocument();
 
     const hostnames = Array.from(container.querySelectorAll("article")).map((article) => {
-      const label = article.querySelector("button span.min-w-0 span.block");
-      return label?.childNodes[0]?.textContent ?? "";
+      const label = article.querySelector("span.select-text");
+      return label?.textContent ?? "";
     });
 
     expect(hostnames).toEqual([

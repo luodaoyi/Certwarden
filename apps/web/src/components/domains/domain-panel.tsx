@@ -108,25 +108,26 @@ export function DomainPanel({
     >
       <div className="px-3 py-2.5 sm:px-4">
         <div className="flex flex-col gap-2 lg:grid lg:grid-cols-[minmax(0,1.6fr)_88px_minmax(150px,1.1fr)_minmax(100px,0.8fr)_auto] lg:items-center lg:gap-3">
-          <button
-            type="button"
-            aria-expanded={expanded}
-            className="flex min-w-0 items-start gap-2 text-left"
-            onClick={onToggle}
-          >
-            <span className="mt-0.5 shrink-0 text-muted-foreground">
+          <div className="flex min-w-0 items-start gap-2 text-left">
+            <button
+              type="button"
+              aria-label={domain.hostname}
+              aria-expanded={expanded}
+              className="-ml-1 flex h-7 w-7 shrink-0 items-center justify-center rounded text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              onClick={onToggle}
+            >
               {expanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-            </span>
+            </button>
             <span className="min-w-0">
               <span className="block truncate text-[15px] font-semibold leading-tight text-foreground">
-                {domain.hostname}
+                <span className="cursor-text select-text">{domain.hostname}</span>
                 <span className="font-medium text-muted-foreground">:{domain.port}</span>
               </span>
               <span className="mt-0.5 block truncate text-[12px] text-muted-foreground">
                 {t("common.targetIp")}: {targetIP} · {t("common.resolvedIp")}: {resolvedIP}
               </span>
             </span>
-          </button>
+          </div>
 
           <div className="flex items-center gap-2 pl-6 lg:pl-0">
             <Badge variant={statusVariant(domain.status)} className="px-2 py-0.5 text-[10px]">
