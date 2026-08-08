@@ -34,13 +34,20 @@ func TestManualCheckStartsAsyncJobAndStreamsProgress(t *testing.T) {
 	if registerResp.Code != http.StatusCreated {
 		t.Fatalf("expected register 201, got %d (%s)", registerResp.Code, registerResp.Body.String())
 	}
+	loginResp := performJSONRequest(t, router, http.MethodPost, "/api/auth/login", map[string]string{
+		"username": "owner",
+		"password": "Password123!",
+	}, "")
+	if loginResp.Code != http.StatusOK {
+		t.Fatalf("expected login 200, got %d (%s)", loginResp.Code, loginResp.Body.String())
+	}
 	var authPayload struct {
 		Tokens struct {
 			AccessToken string `json:"access_token"`
 		} `json:"tokens"`
 	}
-	if err := json.Unmarshal(registerResp.Body.Bytes(), &authPayload); err != nil {
-		t.Fatalf("decode register payload: %v", err)
+	if err := json.Unmarshal(loginResp.Body.Bytes(), &authPayload); err != nil {
+		t.Fatalf("decode login payload: %v", err)
 	}
 
 	createResp := performJSONRequest(t, router, http.MethodPost, "/api/domains", map[string]any{
