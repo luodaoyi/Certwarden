@@ -2,6 +2,7 @@ package scheduler
 
 import (
 	"context"
+	"errors"
 	"io"
 	"log/slog"
 	"strings"
@@ -83,7 +84,7 @@ func TestStopLeavesJobsChannelOpen(t *testing.T) {
 	_, cancel := context.WithCancel(context.Background())
 	service := &Service{
 		cancel: cancel,
-		jobs:   make(chan uint, 1),
+		jobs:   make(chan scanTask, 1),
 		logger: slog.New(slog.NewTextHandler(io.Discard, nil)),
 	}
 
@@ -95,7 +96,50 @@ func TestStopLeavesJobsChannelOpen(t *testing.T) {
 		}
 	}()
 
-	service.jobs <- 1
+	service.jobs <- scanTask{domainID: 1}
+}
+
+func TestCheckJobReportsProgressAndEnforcesTenantOwnership(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	service := &Service{
+		runCtx:    ctx,
+		jobs:      make(chan scanTask, 1),
+		checkJobs: make(map[string]*checkJob),
+	}
+
+	started, err := service.StartCheckJob(7, "single", []CheckTarget{{DomainID: 9, Hostname: "example.com"}})
+	if err != nil {
+		t.Fatalf("start check job: %v", err)
+	}
+	if _, _, _, err := service.CheckJobEvents(8, started.JobID, 0); !errors.Is(err, ErrCheckJobNotFound) {
+		t.Fatalf("expected tenant isolation, got %v", err)
+	}
+
+	task := <-service.jobs
+	task.onStart()
+	task.result <- scanOutcome{domain: &models.Domain{ID: 9, Hostname: "example.com", Status: models.DomainStatusHealthy}}
+
+	deadline := time.Now().Add(time.Second)
+	for {
+		events, done, _, err := service.CheckJobEvents(7, started.JobID, 0)
+		if err != nil {
+			t.Fatalf("read check job: %v", err)
+		}
+		if done {
+			if len(events) != 4 || events[0].Type != "job.started" || events[1].Type != "domain.started" || events[2].Type != "domain.completed" || events[3].Type != "job.completed" {
+				t.Fatalf("unexpected events: %+v", events)
+			}
+			if events[3].Succeeded != 1 || events[3].Failed != 0 || events[3].Status != "completed" {
+				t.Fatalf("unexpected completion: %+v", events[3])
+			}
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatal("timed out waiting for check job")
+		}
+		time.Sleep(time.Millisecond)
+	}
 }
 
 func TestSchedulerPanicIsReportedWithoutCrashingProcess(t *testing.T) {

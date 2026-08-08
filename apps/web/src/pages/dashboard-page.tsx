@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ExternalLink, LoaderCircle, Plus, RefreshCw, Settings2 } from "lucide-react";
@@ -8,12 +8,12 @@ import { DomainPanel } from "@/components/domains/domain-panel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { apiRequest } from "@/lib/api";
+import { apiRequest, streamCheckJobEvents } from "@/lib/api";
 import { useApiErrorMessage } from "@/lib/api-error";
 import { useAuth } from "@/lib/auth";
 import { sortDomainsByCertExpiryAsc } from "@/lib/certificate-age";
 import { useI18n } from "@/lib/i18n";
-import type { ApiDomain, DomainStatus, PublicTenantStatus } from "@/lib/types";
+import type { ApiDomain, CheckJobEvent, CheckJobMode, CheckJobStart, DomainStatus, PublicTenantStatus } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 type ToastTone = "success" | "error" | "warning";
@@ -21,6 +21,14 @@ type ToastTone = "success" | "error" | "warning";
 type ToastState = {
   message: string;
   tone: ToastTone;
+};
+
+type CheckProgress = {
+  mode: CheckJobMode;
+  total: number;
+  completed: number;
+  succeeded: number;
+  failed: number;
 };
 
 function statusVariant(status: DomainStatus) {
@@ -95,8 +103,10 @@ export function DashboardPage() {
   const [editingDomain, setEditingDomain] = useState<ApiDomain | null>(null);
   const [expandedDomainId, setExpandedDomainId] = useState<number | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
-  const [isCheckingAll, setIsCheckingAll] = useState(false);
+  const [checkProgress, setCheckProgress] = useState<CheckProgress | null>(null);
+  const [domainCheckStates, setDomainCheckStates] = useState<Record<number, "queued" | "running">>({});
   const [toast, setToast] = useState<ToastState | null>(null);
+  const checkAbortRef = useRef<AbortController | null>(null);
 
   const showToast = useCallback((message: string, tone: ToastTone) => {
     setToast({ message, tone });
@@ -105,6 +115,8 @@ export function DashboardPage() {
   const dismissToast = useCallback(() => {
     setToast(null);
   }, []);
+
+  useEffect(() => () => checkAbortRef.current?.abort(), []);
 
   const domainsQuery = useQuery({
     queryKey: ["domains"],
@@ -151,19 +163,11 @@ export function DashboardPage() {
     },
   });
 
-  const checkMutation = useMutation({
-    mutationFn: (id: number) => apiRequest<{ domain: ApiDomain }>(`/domains/${id}/check`, { method: "POST" }),
-    onSuccess: async () => {
-      await refreshMonitoringData();
-    },
-  });
-
   // Sort a copy for display only; query cache / API arrays stay untouched.
   const domains = useMemo(
     () => sortDomainsByCertExpiryAsc(domainsQuery.data?.domains ?? []),
     [domainsQuery.data],
   );
-  const checkingDomainId = checkMutation.isPending ? checkMutation.variables : null;
   const publicStatus = publicStatusQuery.data;
   const overallStatus = publicStatus?.summary.overall_status ?? "pending";
   const overallStatusLabel = overallStatus === "healthy"
@@ -177,39 +181,113 @@ export function DashboardPage() {
   const pendingCount = publicStatus?.summary.pending_count ?? 0;
   const errorCount = publicStatus?.summary.error_count ?? 0;
   const formVisible = showAddForm || editingDomain !== null;
-  const checkAllDisabled = domains.length === 0 || isCheckingAll || checkMutation.isPending;
+  const isCheckingAll = checkProgress?.mode === "all";
+  const checkAllDisabled = domains.length === 0 || checkProgress !== null;
+
+  const runStartedCheckJob = async (started: CheckJobStart, controller: AbortController, singleHostname?: string) => {
+    let finalEvent: CheckJobEvent | null = null;
+    let singleResult: CheckJobEvent | null = null;
+    setCheckProgress({ mode: started.mode, total: started.total, completed: 0, succeeded: 0, failed: 0 });
+
+    try {
+      await streamCheckJobEvents(started.job_id, (event) => {
+        setCheckProgress({
+          mode: event.mode,
+          total: event.total,
+          completed: event.completed,
+          succeeded: event.succeeded,
+          failed: event.failed,
+        });
+        if (event.type === "domain.started" && event.domain_id) {
+          setDomainCheckStates((current) => ({ ...current, [event.domain_id as number]: "running" }));
+        } else if (event.type === "domain.completed" && event.domain_id) {
+          singleResult = event;
+          setDomainCheckStates((current) => {
+            const next = { ...current };
+            delete next[event.domain_id as number];
+            return next;
+          });
+        } else if (event.type === "job.completed") {
+          finalEvent = event;
+        }
+      }, controller.signal);
+
+      if (finalEvent) {
+        const completedEvent = finalEvent as CheckJobEvent;
+        if (completedEvent.mode === "all") {
+          if (completedEvent.failed === 0) {
+            showToast(t("dashboard.checkAllSuccess", { count: completedEvent.succeeded }), "success");
+          } else if (completedEvent.succeeded === 0) {
+            showToast(t("dashboard.checkAllFailed", { count: completedEvent.failed }), "error");
+          } else {
+            showToast(t("dashboard.checkAllPartial", {
+              success: completedEvent.succeeded,
+              total: completedEvent.total,
+              failed: completedEvent.failed,
+            }), "warning");
+          }
+        } else if ((singleResult as CheckJobEvent | null)?.status === "healthy") {
+          showToast(t("dashboard.domainCheckSuccess", { hostname: singleHostname ?? "" }), "success");
+        } else {
+          showToast(t("dashboard.domainCheckFailed", { hostname: singleHostname ?? "" }), "error");
+        }
+      }
+      await refreshMonitoringData();
+    } catch (error) {
+      if (!controller.signal.aborted) {
+        showToast(getApiErrorMessage(error, t("dashboard.checkStreamError")), "error");
+      }
+    } finally {
+      if (checkAbortRef.current === controller) {
+        checkAbortRef.current = null;
+      }
+      setCheckProgress(null);
+      setDomainCheckStates({});
+    }
+  };
+
+  const handleDomainCheck = async (domain: ApiDomain) => {
+    if (checkProgress) return;
+    const controller = new AbortController();
+    checkAbortRef.current = controller;
+    setCheckProgress({ mode: "single", total: 1, completed: 0, succeeded: 0, failed: 0 });
+    setDomainCheckStates({ [domain.id]: "queued" });
+    try {
+      const started = await apiRequest<CheckJobStart>(`/domains/${domain.id}/check`, {
+        method: "POST",
+        signal: controller.signal,
+      });
+      await runStartedCheckJob(started, controller, domain.hostname);
+    } catch (error) {
+      if (!controller.signal.aborted) {
+        showToast(getApiErrorMessage(error, t("dashboard.checkStartError")), "error");
+      }
+      checkAbortRef.current = null;
+      setCheckProgress(null);
+      setDomainCheckStates({});
+    }
+  };
 
   const handleCheckAll = async () => {
     if (checkAllDisabled) return;
 
-    setIsCheckingAll(true);
+    const controller = new AbortController();
+    checkAbortRef.current = controller;
+    setCheckProgress({ mode: "all", total: domains.length, completed: 0, succeeded: 0, failed: 0 });
+    setDomainCheckStates(Object.fromEntries(domains.map((domain) => [domain.id, "queued"])));
     try {
-      const results = await Promise.allSettled(
-        domains.map((domain) =>
-          apiRequest<{ domain: ApiDomain }>(`/domains/${domain.id}/check`, { method: "POST" })
-        )
-      );
-      const successCount = results.filter((result) => result.status === "fulfilled").length;
-      const failedCount = results.length - successCount;
-
-      if (failedCount === 0) {
-        showToast(t("dashboard.checkAllSuccess", { count: successCount }), "success");
-      } else if (successCount === 0) {
-        showToast(t("dashboard.checkAllFailed", { count: failedCount }), "error");
-      } else {
-        showToast(
-          t("dashboard.checkAllPartial", {
-            success: successCount,
-            total: results.length,
-            failed: failedCount,
-          }),
-          "warning"
-        );
+      const started = await apiRequest<CheckJobStart>("/domains/check-all", {
+        method: "POST",
+        signal: controller.signal,
+      });
+      await runStartedCheckJob(started, controller);
+    } catch (error) {
+      if (!controller.signal.aborted) {
+        showToast(getApiErrorMessage(error, t("dashboard.checkStartError")), "error");
       }
-
-      await refreshMonitoringData();
-    } finally {
-      setIsCheckingAll(false);
+      checkAbortRef.current = null;
+      setCheckProgress(null);
+      setDomainCheckStates({});
     }
   };
 
@@ -337,7 +415,12 @@ export function DashboardPage() {
               ) : (
                 <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
               )}
-              {isCheckingAll ? t("dashboard.checkingAll") : t("dashboard.checkAll")}
+              {isCheckingAll
+                ? t("dashboard.checkProgress", {
+                  completed: checkProgress.completed,
+                  total: checkProgress.total,
+                })
+                : t("dashboard.checkAll")}
             </Button>
             <span className="text-[12px] tabular-nums text-muted-foreground">{domainCount}</span>
           </div>
@@ -357,7 +440,8 @@ export function DashboardPage() {
             <p className="px-1 py-6 text-center text-sm text-muted-foreground">{t("domains.empty")}</p>
           ) : null}
           {domains.map((domain) => {
-            const isChecking = checkingDomainId === domain.id;
+            const checkState = domainCheckStates[domain.id];
+            const isChecking = Boolean(checkState);
 
             return (
               <DomainPanel
@@ -383,15 +467,15 @@ export function DashboardPage() {
                       variant="command"
                       size="sm"
                       aria-busy={isChecking}
-                      disabled={checkMutation.isPending || isCheckingAll}
+                      disabled={checkProgress !== null}
                       className={cn(
                         "h-7 min-w-[96px] rounded-lg px-2.5 text-[12px]",
                         isChecking && "border-[#d97757] bg-[#f2c4b1] text-[#2e1911] shadow-[0_0_0_1px_rgba(217,119,87,0.45)]"
                       )}
-                      onClick={() => void checkMutation.mutateAsync(domain.id)}
+                      onClick={() => void handleDomainCheck(domain)}
                     >
                       {isChecking ? <LoaderCircle className="h-3.5 w-3.5 animate-spin" aria-hidden="true" /> : null}
-                      {isChecking ? t("common.checking") : t("common.checkNow")}
+                      {checkState === "queued" ? t("common.queued") : isChecking ? t("common.checking") : t("common.checkNow")}
                     </Button>
                     <Button
                       variant="destructive"

@@ -52,7 +52,7 @@ func (s *Server) Router() http.Handler {
 	router.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   []string{"http://localhost:5173", "http://127.0.0.1:5173"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
-		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "Last-Event-ID"},
 		AllowCredentials: true,
 		MaxAge:           300,
 	}))
@@ -82,12 +82,14 @@ func (s *Server) Router() http.Handler {
 		r.Route("/domains", func(domains chi.Router) {
 			domains.Get("/", s.handleListDomains)
 			domains.Post("/", s.handleCreateDomain)
+			domains.Post("/check-all", s.handleManualCheckAll)
 			domains.Get("/{domainID}", s.handleGetDomain)
 			domains.Put("/{domainID}", s.handleUpdateDomain)
 			domains.Delete("/{domainID}", s.handleDeleteDomain)
 			domains.Post("/{domainID}/check", s.handleManualCheck)
 			domains.Get("/{domainID}/history", s.handleDomainHistory)
 		})
+		r.Get("/check-jobs/{jobID}/events", s.handleCheckJobEvents)
 
 		r.Route("/notification-endpoints", func(endpoints chi.Router) {
 			endpoints.Get("/", s.handleListEndpoints)

@@ -8,12 +8,14 @@ import { I18nProvider } from "@/lib/i18n";
 import { DashboardPage } from "@/pages/dashboard-page";
 
 const apiRequestMock = vi.fn();
+const streamCheckJobEventsMock = vi.fn();
 
 vi.mock("@/lib/api", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/lib/api")>();
   return {
     ...actual,
     apiRequest: (...args: unknown[]) => apiRequestMock(...args),
+    streamCheckJobEvents: (...args: unknown[]) => streamCheckJobEventsMock(...args),
   };
 });
 
@@ -143,6 +145,7 @@ describe("DashboardPage", () => {
   beforeEach(() => {
     window.localStorage.setItem("certwarden.locale", "en");
     apiRequestMock.mockReset();
+    streamCheckJobEventsMock.mockReset();
   });
 
   it("renders monitoring overview above the certificate table", async () => {
@@ -162,7 +165,7 @@ describe("DashboardPage", () => {
 
   it("shows a visible pending state while checking a domain immediately", async () => {
     const user = userEvent.setup();
-    let resolveCheckRequest: ((value: { domain: Record<string, unknown> }) => void) | undefined;
+    let finishStream: (() => void) | undefined;
 
     const domain = baseDomain();
 
@@ -176,12 +179,29 @@ describe("DashboardPage", () => {
       }
 
       if (path === "/domains/1/check" && init?.method === "POST") {
-        return new Promise((resolve) => {
-          resolveCheckRequest = resolve;
-        });
+        return Promise.resolve({ job_id: "single-job", mode: "single", status: "queued", total: 1 });
       }
 
       throw new Error(`Unexpected request: ${path}`);
+    });
+    streamCheckJobEventsMock.mockImplementation(async (_jobID, onEvent) => {
+      onEvent({
+        id: 1, type: "domain.started", job_id: "single-job", mode: "single",
+        domain_id: 1, hostname: "example.com", status: "running",
+        total: 1, completed: 0, succeeded: 0, failed: 0,
+      });
+      await new Promise<void>((resolve) => {
+        finishStream = resolve;
+      });
+      onEvent({
+        id: 2, type: "domain.completed", job_id: "single-job", mode: "single",
+        domain_id: 1, hostname: "example.com", status: "healthy",
+        total: 1, completed: 1, succeeded: 1, failed: 0,
+      });
+      onEvent({
+        id: 3, type: "job.completed", job_id: "single-job", mode: "single", status: "completed",
+        total: 1, completed: 1, succeeded: 1, failed: 0,
+      });
     });
 
     renderDashboard();
@@ -193,11 +213,12 @@ describe("DashboardPage", () => {
     expect(checkingButton).toBeDisabled();
     expect(checkingButton).toHaveAttribute("aria-busy", "true");
 
-    resolveCheckRequest?.({ domain });
+    finishStream?.();
 
     await waitFor(() => {
       expect(screen.getByRole("button", { name: "Check now" })).toHaveAttribute("aria-busy", "false");
     });
+    expect(screen.getByRole("status")).toHaveTextContent("example.com checked successfully.");
   });
 
   it("derives remaining days from cert_expires_at instead of stale days_remaining", async () => {
@@ -322,7 +343,7 @@ describe("DashboardPage", () => {
     ]);
   });
 
-  it("checks all domains concurrently, refreshes results, and reports bulk success", async () => {
+  it("streams bulk check progress, refreshes results, and reports success", async () => {
     const user = userEvent.setup();
     const domains = [
       baseDomain({ id: 1, hostname: "a.example.com" }),
@@ -330,7 +351,7 @@ describe("DashboardPage", () => {
     ];
     let domainFetches = 0;
     let statusFetches = 0;
-    const checkResolvers: Array<(value: { domain: Record<string, unknown> }) => void> = [];
+    let finishStream: (() => void) | undefined;
 
     apiRequestMock.mockImplementation((path: string, init?: RequestInit) => {
       if (path === "/domains" && !init) {
@@ -343,13 +364,32 @@ describe("DashboardPage", () => {
         return Promise.resolve(publicStatusPayload(domains));
       }
 
-      if ((path === "/domains/1/check" || path === "/domains/2/check") && init?.method === "POST") {
-        return new Promise((resolve) => {
-          checkResolvers.push(resolve as (value: { domain: Record<string, unknown> }) => void);
-        });
+      if (path === "/domains/check-all" && init?.method === "POST") {
+        return Promise.resolve({ job_id: "all-job", mode: "all", status: "queued", total: 2 });
       }
 
       throw new Error(`Unexpected request: ${path}`);
+    });
+    streamCheckJobEventsMock.mockImplementation(async (_jobID, onEvent) => {
+      onEvent({
+        id: 1, type: "domain.started", job_id: "all-job", mode: "all", domain_id: 1,
+        hostname: "a.example.com", status: "running", total: 2, completed: 0, succeeded: 0, failed: 0,
+      });
+      await new Promise<void>((resolve) => {
+        finishStream = resolve;
+      });
+      onEvent({
+        id: 2, type: "domain.completed", job_id: "all-job", mode: "all", domain_id: 1,
+        hostname: "a.example.com", status: "healthy", total: 2, completed: 1, succeeded: 1, failed: 0,
+      });
+      onEvent({
+        id: 3, type: "domain.completed", job_id: "all-job", mode: "all", domain_id: 2,
+        hostname: "b.example.com", status: "healthy", total: 2, completed: 2, succeeded: 2, failed: 0,
+      });
+      onEvent({
+        id: 4, type: "job.completed", job_id: "all-job", mode: "all", status: "completed",
+        total: 2, completed: 2, succeeded: 2, failed: 0,
+      });
     });
 
     renderDashboard();
@@ -367,12 +407,11 @@ describe("DashboardPage", () => {
     await user.click(checkAll);
 
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: "Checking all…" })).toBeDisabled();
+      expect(screen.getByRole("button", { name: "Checking 0/2…" })).toBeDisabled();
     });
-    expect(checkResolvers).toHaveLength(2);
+    expect(streamCheckJobEventsMock).toHaveBeenCalledWith("all-job", expect.any(Function), expect.any(AbortSignal));
 
-    checkResolvers[0]?.({ domain: domains[0] });
-    checkResolvers[1]?.({ domain: domains[1] });
+    finishStream?.();
 
     await waitFor(() => {
       expect(screen.getByRole("status")).toHaveTextContent("All 2 domains checked successfully.");
@@ -405,15 +444,26 @@ describe("DashboardPage", () => {
         return Promise.resolve(publicStatusPayload(domains));
       }
 
-      if (path === "/domains/1/check" && init?.method === "POST") {
-        return Promise.resolve({ domain: domains[0] });
-      }
-
-      if (path === "/domains/2/check" && init?.method === "POST") {
-        return Promise.reject(new Error("check failed"));
+      if (path === "/domains/check-all" && init?.method === "POST") {
+        return Promise.resolve({ job_id: "partial-job", mode: "all", status: "queued", total: 2 });
       }
 
       throw new Error(`Unexpected request: ${path}`);
+    });
+    streamCheckJobEventsMock.mockImplementation(async (_jobID, onEvent) => {
+      onEvent({
+        id: 1, type: "domain.completed", job_id: "partial-job", mode: "all", domain_id: 1,
+        hostname: "ok.example.com", status: "healthy", total: 2, completed: 1, succeeded: 1, failed: 0,
+      });
+      onEvent({
+        id: 2, type: "domain.completed", job_id: "partial-job", mode: "all", domain_id: 2,
+        hostname: "bad.example.com", status: "error", error: "check failed",
+        total: 2, completed: 2, succeeded: 1, failed: 1,
+      });
+      onEvent({
+        id: 3, type: "job.completed", job_id: "partial-job", mode: "all", status: "partial",
+        total: 2, completed: 2, succeeded: 1, failed: 1,
+      });
     });
 
     renderDashboard();

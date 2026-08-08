@@ -29,8 +29,10 @@ type Service struct {
 	checker     *sslcheck.Checker
 	notifier    *notify.Service
 	logger      *slog.Logger
-	jobs        chan uint
+	jobs        chan scanTask
 	cancel      context.CancelFunc
+	runCtx      context.Context
+	stateMu     sync.RWMutex
 	startOnce   sync.Once
 	stopOnce    sync.Once
 	workerGroup sync.WaitGroup
@@ -38,16 +40,19 @@ type Service struct {
 	errCh       chan error
 	failureOnce sync.Once
 	now         func() time.Time
+	checkJobsMu sync.RWMutex
+	checkJobs   map[string]*checkJob
 }
 
 func NewService(db *gorm.DB, cfg config.Config, checker *sslcheck.Checker, notifier *notify.Service, logger *slog.Logger) *Service {
 	return &Service{
-		db:       db,
-		cfg:      cfg,
-		checker:  checker,
-		notifier: notifier,
-		logger:   logger,
-		errCh:    make(chan error, 1),
+		db:        db,
+		cfg:       cfg,
+		checker:   checker,
+		notifier:  notifier,
+		logger:    logger,
+		errCh:     make(chan error, 1),
+		checkJobs: make(map[string]*checkJob),
 		now: func() time.Time {
 			return time.Now().UTC()
 		},
@@ -57,8 +62,11 @@ func NewService(db *gorm.DB, cfg config.Config, checker *sslcheck.Checker, notif
 func (s *Service) Start(ctx context.Context) {
 	s.startOnce.Do(func() {
 		runCtx, cancel := context.WithCancel(ctx)
+		s.stateMu.Lock()
 		s.cancel = cancel
-		s.jobs = make(chan uint, s.cfg.ScanConcurrency*2)
+		s.runCtx = runCtx
+		s.jobs = make(chan scanTask, s.cfg.ScanConcurrency*2)
+		s.stateMu.Unlock()
 
 		for index := 0; index < s.cfg.ScanConcurrency; index++ {
 			s.workerGroup.Add(1)
@@ -133,12 +141,19 @@ func (s *Service) worker(ctx context.Context, index int) {
 		select {
 		case <-ctx.Done():
 			return
-		case domainID, ok := <-s.jobs:
+		case task, ok := <-s.jobs:
 			if !ok {
 				return
 			}
-			if _, err := s.processDomain(ctx, domainID); err != nil {
-				s.logger.Error("process domain", "worker", index, "domain_id", domainID, "error", err)
+			if task.onStart != nil {
+				task.onStart()
+			}
+			domain, err := s.processDomain(ctx, task.domainID)
+			if err != nil {
+				s.logger.Error("process domain", "worker", index, "domain_id", task.domainID, "error", err)
+			}
+			if task.result != nil {
+				task.result <- scanOutcome{domain: domain, err: err}
 			}
 		}
 	}
@@ -173,7 +188,7 @@ func (s *Service) dispatchDueDomains(ctx context.Context) error {
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
-		case s.jobs <- domain.ID:
+		case s.jobs <- scanTask{domainID: domain.ID}:
 		}
 	}
 

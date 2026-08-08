@@ -1,6 +1,7 @@
 export type UserRole = "super_admin" | "tenant_owner";
 export type DomainStatus = "pending" | "healthy" | "error";
 export type EndpointType = "email" | "telegram" | "webhook";
+export type CheckJobMode = "single" | "all";
 
 export interface ApiUser {
   id: number;
@@ -138,4 +139,26 @@ export interface PublicTenantStatus {
   };
   public_url: string;
   domains: ApiDomain[];
+}
+
+export interface CheckJobStart {
+  job_id: string;
+  mode: CheckJobMode;
+  status: "queued";
+  total: number;
+}
+
+export interface CheckJobEvent {
+  id: number;
+  type: "job.started" | "domain.started" | "domain.completed" | "job.completed";
+  job_id: string;
+  mode: CheckJobMode;
+  domain_id?: number;
+  hostname?: string;
+  status?: DomainStatus | "running" | "completed" | "partial" | "failed";
+  error?: string;
+  total: number;
+  completed: number;
+  succeeded: number;
+  failed: number;
 }

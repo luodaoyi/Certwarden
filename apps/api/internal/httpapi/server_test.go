@@ -2,6 +2,7 @@ package httpapi_test
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -15,6 +16,79 @@ import (
 	"github.com/luodaoyi/Certwarden/apps/api/internal/notify"
 	"github.com/luodaoyi/Certwarden/apps/api/internal/testutil"
 )
+
+func TestManualCheckStartsAsyncJobAndStreamsProgress(t *testing.T) {
+	runtime := testutil.NewRuntime(t)
+	ctx, cancel := context.WithCancel(context.Background())
+	runtime.Scheduler.Start(ctx)
+	defer func() {
+		cancel()
+		runtime.Scheduler.Stop()
+	}()
+	router := runtime.HTTPServer.Router()
+
+	registerResp := performJSONRequest(t, router, http.MethodPost, "/api/auth/register", map[string]any{
+		"username": "owner",
+		"password": "Password123!",
+	}, "")
+	if registerResp.Code != http.StatusCreated {
+		t.Fatalf("expected register 201, got %d (%s)", registerResp.Code, registerResp.Body.String())
+	}
+	var authPayload struct {
+		Tokens struct {
+			AccessToken string `json:"access_token"`
+		} `json:"tokens"`
+	}
+	if err := json.Unmarshal(registerResp.Body.Bytes(), &authPayload); err != nil {
+		t.Fatalf("decode register payload: %v", err)
+	}
+
+	createResp := performJSONRequest(t, router, http.MethodPost, "/api/domains", map[string]any{
+		"hostname": "disabled.example.com",
+		"port":     443,
+		"enabled":  false,
+	}, authPayload.Tokens.AccessToken)
+	if createResp.Code != http.StatusCreated {
+		t.Fatalf("expected create domain 201, got %d (%s)", createResp.Code, createResp.Body.String())
+	}
+	var createPayload struct {
+		Domain struct {
+			ID uint `json:"id"`
+		} `json:"domain"`
+	}
+	if err := json.Unmarshal(createResp.Body.Bytes(), &createPayload); err != nil {
+		t.Fatalf("decode domain payload: %v", err)
+	}
+
+	checkResp := performJSONRequest(t, router, http.MethodPost, fmt.Sprintf("/api/domains/%d/check", createPayload.Domain.ID), nil, authPayload.Tokens.AccessToken)
+	if checkResp.Code != http.StatusAccepted {
+		t.Fatalf("expected async check 202, got %d (%s)", checkResp.Code, checkResp.Body.String())
+	}
+	var jobPayload struct {
+		JobID string `json:"job_id"`
+		Total int    `json:"total"`
+	}
+	if err := json.Unmarshal(checkResp.Body.Bytes(), &jobPayload); err != nil {
+		t.Fatalf("decode check job: %v", err)
+	}
+	if jobPayload.JobID == "" || jobPayload.Total != 1 {
+		t.Fatalf("unexpected check job payload: %+v", jobPayload)
+	}
+
+	eventsResp := performJSONRequest(t, router, http.MethodGet, "/api/check-jobs/"+jobPayload.JobID+"/events", nil, authPayload.Tokens.AccessToken)
+	if eventsResp.Code != http.StatusOK {
+		t.Fatalf("expected SSE 200, got %d (%s)", eventsResp.Code, eventsResp.Body.String())
+	}
+	if contentType := eventsResp.Header().Get("Content-Type"); !strings.HasPrefix(contentType, "text/event-stream") {
+		t.Fatalf("expected SSE content type, got %q", contentType)
+	}
+	body := eventsResp.Body.String()
+	for _, eventType := range []string{"job.started", "domain.started", "domain.completed", "job.completed"} {
+		if !strings.Contains(body, "event: "+eventType) {
+			t.Fatalf("expected %s event, got %s", eventType, body)
+		}
+	}
+}
 
 func TestSessionCookieAndPublicTenantStatus(t *testing.T) {
 	runtime := testutil.NewRuntime(t)

@@ -98,31 +98,6 @@ func (s *Server) handleDeleteDomain(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]string{"status": "deleted"})
 }
 
-func (s *Server) handleManualCheck(w http.ResponseWriter, r *http.Request) {
-	user, _ := currentUser(r.Context())
-	domainID, err := parseUintParam(r, "domainID")
-	if err != nil {
-		writeError(w, http.StatusBadRequest, "invalid domain id")
-		return
-	}
-	domain, err := s.findDomain(r.Context(), user.TenantID, domainID)
-	if err != nil {
-		if isNotFound(err) {
-			writeError(w, http.StatusNotFound, "domain not found")
-			return
-		}
-		writeError(w, http.StatusInternalServerError, err.Error())
-		return
-	}
-
-	checked, err := s.scheduler.CheckDomainNow(r.Context(), domain.ID)
-	if err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
-		return
-	}
-	writeJSON(w, http.StatusOK, map[string]any{"domain": toAPIDomain(*checked)})
-}
-
 func (s *Server) handleDomainHistory(w http.ResponseWriter, r *http.Request) {
 	user, _ := currentUser(r.Context())
 	domainID, err := parseUintParam(r, "domainID")
