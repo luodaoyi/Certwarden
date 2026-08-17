@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 
 import { DomainPanel } from "@/components/domains/domain-panel";
@@ -26,8 +26,12 @@ function statusVariant(status: DomainStatus) {
 
 export function TenantStatusPage() {
   const { tenantId } = useParams();
+  const [searchParams] = useSearchParams();
   const { t, formatDateTime } = useI18n();
-  const [expandedDomainId, setExpandedDomainId] = useState<number | null>(null);
+  const domainFromQuery = Number(searchParams.get("domain"));
+  const [expandedDomainId, setExpandedDomainId] = useState<number | null>(
+    Number.isFinite(domainFromQuery) && domainFromQuery > 0 ? domainFromQuery : null,
+  );
 
   const statusQuery = useQuery({
     queryKey: ["public-tenant-status", tenantId],

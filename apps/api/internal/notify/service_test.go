@@ -149,6 +149,7 @@ func TestSendTelegramUsesConfiguredLanguage(t *testing.T) {
 		Status:        string(models.DomainStatusHealthy),
 		DaysRemaining: &daysRemaining,
 		CertExpiresAt: &expiresAt,
+		StatusURL:     "https://cert.example.com/status/1?domain=9",
 	})
 	if err != nil {
 		t.Fatalf("send telegram event: %v", err)
@@ -161,6 +162,8 @@ func TestSendTelegramUsesConfiguredLanguage(t *testing.T) {
 		"剩余天数: 7",
 		"证书到期时间: 2026-08-11T00:00:00Z",
 		"提醒阈值: 7 天",
+		"详情: https://cert.example.com/status/1?domain=9",
+		"https://cert.example.com/status/1?domain=9",
 	} {
 		if !strings.Contains(requestBody.Text, expected) {
 			t.Fatalf("expected localized telegram text to contain %q, got %q", expected, requestBody.Text)
@@ -362,4 +365,30 @@ func openNotifyTestDB(t *testing.T) *gorm.DB {
 	sqlDB.SetMaxOpenConns(1)
 	t.Cleanup(func() { _ = sqlDB.Close() })
 	return db
+}
+
+func TestDomainStatusURL(t *testing.T) {
+	got := domainStatusURL("https://cert.011f.com/", 1, 42)
+	want := "https://cert.011f.com/status/1?domain=42"
+	if got != want {
+		t.Fatalf("domainStatusURL = %q, want %q", got, want)
+	}
+	if domainStatusURL("", 1, 42) != "" {
+		t.Fatal("expected empty status URL when AppBaseURL is empty")
+	}
+	if domainStatusURL("https://cert.011f.com", 0, 42) != "" {
+		t.Fatal("expected empty status URL when tenant id is missing")
+	}
+}
+
+func TestFormatMessageOmitsDetailsWithoutStatusURL(t *testing.T) {
+	text := formatMessage(payload{
+		EventType: EventExpired,
+		Hostname:  "example.com",
+		Port:      443,
+		Status:    string(models.DomainStatusError),
+	}, LanguageEnglish)
+	if strings.Contains(text, "Details") {
+		t.Fatalf("expected no Details line when StatusURL is empty, got %q", text)
+	}
 }
