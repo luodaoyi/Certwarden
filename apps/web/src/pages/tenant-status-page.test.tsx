@@ -11,7 +11,7 @@ vi.mock("@/lib/api", () => ({
   apiRequest: (...args: unknown[]) => apiRequestMock(...args),
 }));
 
-function renderTenantStatus(tenantId = "1") {
+function renderTenantStatus(path = "/status/1") {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: { retry: false },
@@ -22,7 +22,7 @@ function renderTenantStatus(tenantId = "1") {
   return render(
     <QueryClientProvider client={queryClient}>
       <I18nProvider>
-        <MemoryRouter initialEntries={[`/status/${tenantId}`]}>
+        <MemoryRouter initialEntries={[path]}>
           <Routes>
             <Route path="/status/:tenantId" element={<TenantStatusPage />} />
           </Routes>
@@ -131,5 +131,49 @@ describe("TenantStatusPage", () => {
       "none.example.com",
       "invalid.example.com",
     ]);
+  });
+
+  it("expands the domain named in the domain query param", async () => {
+    const domains = [
+      baseDomain({ id: 1, hostname: "later.example.com", cert_expires_at: "2026-12-01T00:00:00Z" }),
+      baseDomain({ id: 2, hostname: "expired.example.com", status: "error", cert_expires_at: "2025-01-01T00:00:00Z" }),
+    ];
+
+    apiRequestMock.mockImplementation((path: string) => {
+      if (path === "/public/tenants/1/status") {
+        return Promise.resolve({
+          tenant: {
+            id: 1,
+            name: "Tenant",
+            slug: "tenant",
+            disabled: false,
+            created_at: "2026-04-10T00:00:00Z",
+            updated_at: "2026-04-10T00:00:00Z",
+          },
+          summary: {
+            overall_status: "error",
+            domain_count: domains.length,
+            healthy_count: 1,
+            pending_count: 0,
+            error_count: 1,
+            next_expiry_at: "2025-01-01T00:00:00Z",
+          },
+          public_url: "https://status.example.com",
+          domains,
+        });
+      }
+
+      throw new Error(`Unexpected request: ${path}`);
+    });
+
+    const { container } = renderTenantStatus("/status/1?domain=2");
+
+    expect(await screen.findByText("expired.example.com")).toBeInTheDocument();
+
+    const articles = Array.from(container.querySelectorAll("article"));
+    const expanded = articles.find((article) => article.textContent?.includes("expired.example.com"));
+    const collapsed = articles.find((article) => article.textContent?.includes("later.example.com"));
+    expect(expanded?.querySelector("[aria-expanded=\"true\"]")).not.toBeNull();
+    expect(collapsed?.querySelector("[aria-expanded=\"false\"]")).not.toBeNull();
   });
 });

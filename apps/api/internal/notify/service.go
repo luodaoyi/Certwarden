@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"slices"
+	"strconv"
 	"strings"
 	"time"
 
@@ -58,6 +59,7 @@ type payload struct {
 	Status        string     `json:"status"`
 	DaysRemaining *int       `json:"days_remaining,omitempty"`
 	CertExpiresAt *time.Time `json:"cert_expires_at,omitempty"`
+	StatusURL     string     `json:"status_url,omitempty"`
 }
 
 type event struct {
@@ -377,6 +379,7 @@ func (s *Service) deliverEvent(ctx context.Context, domain models.Domain, endpoi
 		Status:        string(domain.Status),
 		DaysRemaining: domain.DaysRemaining,
 		CertExpiresAt: domain.CertExpiresAt,
+		StatusURL:     domainStatusURL(s.cfg.AppBaseURL, domain.TenantID, domain.ID),
 	}
 	encodedPayload, _ := json.Marshal(payloadBody)
 
@@ -497,6 +500,10 @@ func formatMessage(body payload, language string) string {
 	if body.ThresholdDays > 0 {
 		parts = append(parts, fmt.Sprintf(labels.Threshold, body.ThresholdDays))
 	}
+	if body.StatusURL != "" {
+		parts = append(parts, fmt.Sprintf("%s: %s", labels.Details, body.StatusURL))
+		parts = append(parts, body.StatusURL)
+	}
 	return strings.Join(parts, "\n")
 }
 
@@ -511,6 +518,7 @@ type messageLabels struct {
 	DaysRemaining string
 	CertExpiresAt string
 	Threshold     string
+	Details       string
 }
 
 func notificationLanguage(config map[string]string) string {
@@ -557,6 +565,7 @@ func messageLabelsFor(language string) messageLabels {
 			DaysRemaining: "剩余天数",
 			CertExpiresAt: "证书到期时间",
 			Threshold:     "提醒阈值: %d 天",
+			Details:       "详情",
 		}
 	case LanguageTraditionalChinese:
 		return messageLabels{
@@ -570,6 +579,7 @@ func messageLabelsFor(language string) messageLabels {
 			DaysRemaining: "剩餘天數",
 			CertExpiresAt: "憑證到期時間",
 			Threshold:     "提醒門檻: %d 天",
+			Details:       "詳情",
 		}
 	default:
 		return messageLabels{
@@ -583,6 +593,7 @@ func messageLabelsFor(language string) messageLabels {
 			DaysRemaining: "Days remaining",
 			CertExpiresAt: "Certificate expires at",
 			Threshold:     "Threshold: %d days",
+			Details:       "Details",
 		}
 	}
 }
@@ -676,6 +687,14 @@ func normalizeEndpointIDs(values []uint) []uint {
 	}
 	slices.Sort(cloned)
 	return cloned
+}
+
+func domainStatusURL(baseURL string, tenantID, domainID uint) string {
+	base := strings.TrimRight(baseURL, "/")
+	if base == "" || tenantID == 0 || domainID == 0 {
+		return ""
+	}
+	return base + "/status/" + strconv.FormatUint(uint64(tenantID), 10) + "?domain=" + strconv.FormatUint(uint64(domainID), 10)
 }
 
 func buildDedupKey(domain models.Domain, endpoint models.NotificationEndpoint, evt event) string {
