@@ -1,0 +1,37 @@
+language: zh-CN
+early_access: false
+reviews:
+  profile: assertive
+  request_changes_workflow: true
+  high_level_summary: true
+  poem: false
+  review_status: true
+  collapse_walkthrough: false
+  auto_review:
+    enabled: true
+    drafts: true
+    base_branches:
+      - main
+  path_filters:
+    - "!**/node_modules/**"
+    - "!**/dist/**"
+    - "!vendor/**"
+    - "!**/vendor/**"
+  path_instructions:
+    - path: "apps/api/**"
+      instructions: |
+        Go 后端：多租户证书探测必须按租户隔离配置、调度和结果，禁止跨租户读取或写入。
+        Telegram/邮件告警必须包含对应租户公开状态页的域名链接；改通知模板时不要丢掉该链接。
+        密钥、SMTP/Bot token、会话和私钥不得进入日志、crashlog、公开 API 或仓库文件。
+    - path: "apps/web/src/**"
+      instructions: |
+        React 前端：检查多租户状态页、告警策略表单和公开域名链接展示。不要在浏览器端暴露密钥或未授权写接口。
+        公开状态页只应显示该租户允许公开的信息。
+    - path: ".github/workflows/**"
+      instructions: |
+        检查权限最小化、密钥不进日志、构建产物不含 .env 或凭证。
+    - path: "README*.md"
+      instructions: |
+        多租户证书检查与 Telegram/邮件告警（含公开状态页域名链接）的说明须与实现一致，不要编造未实现能力。
+chat:
+  auto_reply: true
